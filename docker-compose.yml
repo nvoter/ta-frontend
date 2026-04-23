@@ -1,0 +1,19 @@
+services:
+  frontend:
+    build:
+      context: .
+    ports:
+      - "5173:80"
+    restart: unless-stopped
+    environment:
+      EMPLOYEE_GATEWAY_PROXY_TARGET: ${EMPLOYEE_GATEWAY_PROXY_TARGET:-http://employee-api-gateway:8082}
+      EMPLOYEE_GATEWAY_PROXY_HOST: ${EMPLOYEE_GATEWAY_PROXY_HOST:-employee-api-gateway}
+      STUDENT_GATEWAY_PROXY_TARGET: ${STUDENT_GATEWAY_PROXY_TARGET:-http://student-api-gateway:8081}
+      STUDENT_GATEWAY_PROXY_HOST: ${STUDENT_GATEWAY_PROXY_HOST:-student-api-gateway}
+    networks:
+      - ta-backend-network
+
+networks:
+  ta-backend-network:
+    name: ta-backend-network
+    external: true

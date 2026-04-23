@@ -1,0 +1,39 @@
+server {
+    listen 80;
+    server_name _;
+
+    client_max_body_size 20m;
+    
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /student-api-gateway/ {
+        rewrite ^/student-api-gateway/(.*)$ /$1 break;
+        proxy_pass ${STUDENT_GATEWAY_PROXY_TARGET};
+        proxy_http_version 1.1;
+        proxy_ssl_server_name on;
+        proxy_ssl_name ${STUDENT_GATEWAY_PROXY_HOST};
+
+        proxy_set_header Host ${STUDENT_GATEWAY_PROXY_HOST};
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /employee-api-gateway/ {
+        rewrite ^/employee-api-gateway/(.*)$ /$1 break;
+        proxy_pass ${EMPLOYEE_GATEWAY_PROXY_TARGET};
+        proxy_http_version 1.1;
+        proxy_ssl_server_name on;
+        proxy_ssl_name ${EMPLOYEE_GATEWAY_PROXY_HOST};
+
+        proxy_set_header Host ${EMPLOYEE_GATEWAY_PROXY_HOST};
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
