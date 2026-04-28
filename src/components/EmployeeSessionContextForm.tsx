@@ -1,6 +1,7 @@
 import { useId, type ReactNode } from 'react'
 import {
-  EMPLOYEE_POSITION_OPTIONS,
+  EMPLOYEE_OTHER_WORKPLACE_OPTION,
+  EMPLOYEE_SESSION_CONTEXT_POSITION_OPTIONS,
   EMPLOYEE_WORKPLACE_OPTIONS,
 } from '../hooks/useEmployeePersonalDataForm'
 import { useEmployeeSessionContextForm } from '../hooks/useEmployeeSessionContextForm'
@@ -36,10 +37,12 @@ export function EmployeeSessionContextForm({
     handleChange,
     handleModeChange,
     handleSubmit,
+    isCustomWorkplace,
     isDelegateMode,
     isLoadingInitialState,
     isSelfMode,
     isSubmitting,
+    resetWorkplaceToSelect,
     submitError,
   } = useEmployeeSessionContextForm({ onClose, onSubmitted })
 
@@ -162,27 +165,61 @@ export function EmployeeSessionContextForm({
               <label className="auth-form__label" htmlFor={applicantWorkplaceId}>
                 Место работы преподавателя
               </label>
-              <select
-                id={applicantWorkplaceId}
-                className={[
-                  'auth-form__input',
-                  applicantWorkplaceError ? 'auth-form__input--error' : '',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-                name="applicantWorkplace"
-                value={applicantWorkplace}
-                onChange={handleChange}
-                aria-invalid={Boolean(applicantWorkplaceError)}
-                disabled={isLoadingInitialState || isSubmitting}
-              >
-                <option value="">Выберите место работы</option>
-                {EMPLOYEE_WORKPLACE_OPTIONS.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
+              {isCustomWorkplace ? (
+                <>
+                  <input
+                    id={applicantWorkplaceId}
+                    className={[
+                      'auth-form__input',
+                      applicantWorkplaceError ? 'auth-form__input--error' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    name="applicantWorkplace"
+                    type="text"
+                    placeholder="Введите место работы"
+                    value={applicantWorkplace}
+                    onChange={handleChange}
+                    aria-invalid={Boolean(applicantWorkplaceError)}
+                    disabled={isLoadingInitialState || isSubmitting}
+                  />
+                  <div className="auth-form__meta">
+                    <button
+                      className="auth-form__text-button"
+                      type="button"
+                      onClick={resetWorkplaceToSelect}
+                      disabled={isLoadingInitialState || isSubmitting}
+                    >
+                      Выбрать из списка
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <select
+                  id={applicantWorkplaceId}
+                  className={[
+                    'auth-form__input',
+                    applicantWorkplaceError ? 'auth-form__input--error' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  name="applicantWorkplace"
+                  value={applicantWorkplace}
+                  onChange={handleChange}
+                  aria-invalid={Boolean(applicantWorkplaceError)}
+                  disabled={isLoadingInitialState || isSubmitting}
+                >
+                  <option value="">Выберите место работы</option>
+                  {EMPLOYEE_WORKPLACE_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                  <option value={EMPLOYEE_OTHER_WORKPLACE_OPTION}>
+                    {EMPLOYEE_OTHER_WORKPLACE_OPTION}
                   </option>
-                ))}
-              </select>
+                </select>
+              )}
             </FieldBlock>
 
             <FieldBlock error={applicantPositionError}>
@@ -204,7 +241,7 @@ export function EmployeeSessionContextForm({
                 disabled={isLoadingInitialState || isSubmitting}
               >
                 <option value="">Выберите должность</option>
-                {EMPLOYEE_POSITION_OPTIONS.map((option) => (
+                {EMPLOYEE_SESSION_CONTEXT_POSITION_OPTIONS.map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>

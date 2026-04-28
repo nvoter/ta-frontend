@@ -3563,6 +3563,12 @@
   gap: 0;
 }
 
+.employee-dialog__value-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .employee-dialog__value {
   width: 72px;
   min-height: 44px;
@@ -3572,6 +3578,13 @@
   color: var(--color-primary);
   font-size: 1.05rem;
   font-weight: 600;
+}
+
+.employee-dialog__value-unit {
+  color: var(--color-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .employee-inline-form__error {

@@ -4,8 +4,9 @@ import {
   updateEmployeeSessionContext,
 } from '../api/usersApi'
 import {
-  EMPLOYEE_POSITION_OPTIONS,
-  EMPLOYEE_WORKPLACE_OPTIONS,
+  EMPLOYEE_OTHER_WORKPLACE_OPTION,
+  EMPLOYEE_SESSION_CONTEXT_POSITION_OPTIONS,
+  isKnownEmployeeWorkplace,
 } from './useEmployeePersonalDataForm'
 import { validateEmployeeEmail } from '../utils/validateEmployeeEmail'
 
@@ -50,6 +51,9 @@ export function useEmployeeSessionContextForm(
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isCustomWorkplace, setIsCustomWorkplace] = useState(() =>
+    shouldUseCustomWorkplaceInput(DEFAULT_DRAFT.applicantWorkplace),
+  )
 
   const fieldErrors = useMemo(
     () => (isSubmitted ? getValidationErrors(draft) : getEmptyErrors()),
@@ -75,6 +79,9 @@ export function useEmployeeSessionContextForm(
           applicantWorkplace: context.applicantWorkplace ?? '',
           mode: context.isTheApplicant ? 'self' : 'delegate',
         })
+        setIsCustomWorkplace(
+          shouldUseCustomWorkplaceInput(context.applicantWorkplace ?? ''),
+        )
       } catch (error) {
         if (isMounted) {
           setSubmitError(getErrorMessage(error))
@@ -105,10 +112,18 @@ export function useEmployeeSessionContextForm(
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = event.target
+    const normalizedValue =
+      name === 'applicantWorkplace' && value === EMPLOYEE_OTHER_WORKPLACE_OPTION
+        ? ''
+        : value
+
+    if (name === 'applicantWorkplace') {
+      setIsCustomWorkplace(value === EMPLOYEE_OTHER_WORKPLACE_OPTION)
+    }
 
     setDraft((currentState) => ({
       ...currentState,
-      [name]: value,
+      [name]: normalizedValue,
     }))
     setSubmitError('')
   }
@@ -160,9 +175,18 @@ export function useEmployeeSessionContextForm(
     handleModeChange,
     handleSubmit,
     isDelegateMode: draft.mode === 'delegate',
+    isCustomWorkplace,
     isLoadingInitialState,
     isSelfMode: draft.mode === 'self',
     isSubmitting,
+    resetWorkplaceToSelect: () => {
+      setDraft((currentState) => ({
+        ...currentState,
+        applicantWorkplace: '',
+      }))
+      setIsCustomWorkplace(false)
+      setSubmitError('')
+    },
     submitError,
   }
 }
@@ -187,12 +211,11 @@ function getValidationErrors(
     applicantPosition: validateRequiredSelectValue(
       draft.applicantPosition,
       'Выберите должность преподавателя',
-      EMPLOYEE_POSITION_OPTIONS,
+      EMPLOYEE_SESSION_CONTEXT_POSITION_OPTIONS,
     ),
-    applicantWorkplace: validateRequiredSelectValue(
+    applicantWorkplace: validateRequiredWorkplaceValue(
       draft.applicantWorkplace,
       'Выберите место работы преподавателя',
-      EMPLOYEE_WORKPLACE_OPTIONS,
     ),
   }
 }
@@ -239,10 +262,24 @@ function validateRequiredSelectValue(
   return null
 }
 
+function validateRequiredWorkplaceValue(value: string, requiredMessage: string) {
+  if (!value.trim()) {
+    return requiredMessage
+  }
+
+  return null
+}
+
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) {
     return error.message
   }
 
   return 'Не удалось обновить контекст сессии'
+}
+
+function shouldUseCustomWorkplaceInput(value: string) {
+  const normalizedValue = value.trim()
+
+  return normalizedValue !== '' && !isKnownEmployeeWorkplace(normalizedValue)
 }

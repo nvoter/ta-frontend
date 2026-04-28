@@ -19,6 +19,9 @@ interface EmployeePersonalDataValues {
   workplace: string
 }
 
+export const EMPLOYEE_MANAGER_POSITION = 'Менеджер'
+export const EMPLOYEE_OTHER_WORKPLACE_OPTION = 'Другое'
+
 const EMPLOYEE_POSITION_VALUES = [
   'Ассистент',
   'Преподаватель',
@@ -26,6 +29,7 @@ const EMPLOYEE_POSITION_VALUES = [
   'Доцент',
   'Профессор',
   'Приглашенный преподаватель',
+  EMPLOYEE_MANAGER_POSITION,
 ] as const
 
 const EMPLOYEE_WORKPLACE_VALUES = [
@@ -48,9 +52,16 @@ export const EMPLOYEE_POSITION_OPTIONS: readonly string[] = sortStringsRu([
   ...EMPLOYEE_POSITION_VALUES,
 ])
 
+export const EMPLOYEE_SESSION_CONTEXT_POSITION_OPTIONS: readonly string[] =
+  EMPLOYEE_POSITION_OPTIONS.filter((option) => option !== EMPLOYEE_MANAGER_POSITION)
+
 export const EMPLOYEE_WORKPLACE_OPTIONS: readonly string[] = sortStringsRu([
   ...EMPLOYEE_WORKPLACE_VALUES,
 ])
+
+export function isKnownEmployeeWorkplace(value: string) {
+  return EMPLOYEE_WORKPLACE_OPTIONS.includes(value.trim())
+}
 
 interface UseEmployeePersonalDataFormOptions {
   embedded?: boolean
@@ -75,6 +86,9 @@ export function useEmployeePersonalDataForm(
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [isCustomWorkplace, setIsCustomWorkplace] = useState(() =>
+    shouldUseCustomWorkplaceInput(values.workplace),
+  )
 
   const errors = useMemo(
     () => (isSubmitted ? validateEmployeePersonalDataForm(values) : {}),
@@ -101,6 +115,7 @@ export function useEmployeePersonalDataForm(
 
         setInitialValues(nextValues)
         setValues(nextValues)
+        setIsCustomWorkplace(shouldUseCustomWorkplaceInput(nextValues.workplace))
         saveEmployeePersonalDataDraft(nextValues)
       } catch (error) {
         if (isMounted) {
@@ -124,9 +139,15 @@ export function useEmployeePersonalDataForm(
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = event.target
+    const normalizedValue =
+      name === 'workplace' && value === EMPLOYEE_OTHER_WORKPLACE_OPTION ? '' : value
     const nextValues = {
       ...values,
-      [name]: value,
+      [name]: normalizedValue,
+    }
+
+    if (name === 'workplace') {
+      setIsCustomWorkplace(value === EMPLOYEE_OTHER_WORKPLACE_OPTION)
     }
 
     setValues(nextValues)
@@ -177,6 +198,7 @@ export function useEmployeePersonalDataForm(
 
   const handleCancel = () => {
     setValues(initialValues)
+    setIsCustomWorkplace(shouldUseCustomWorkplaceInput(initialValues.workplace))
     setIsSubmitted(false)
     setSubmitError('')
     saveEmployeePersonalDataDraft(initialValues)
@@ -189,8 +211,20 @@ export function useEmployeePersonalDataForm(
     handleCancel,
     handleInputChange,
     handleSubmit,
+    isCustomWorkplace,
     isLoading,
     isSaving,
+    resetWorkplaceToSelect: () => {
+      const nextValues = {
+        ...values,
+        workplace: '',
+      }
+
+      setIsCustomWorkplace(false)
+      setValues(nextValues)
+      saveEmployeePersonalDataDraft(nextValues)
+      setSubmitError('')
+    },
     submitError,
     values,
   }
@@ -213,10 +247,6 @@ function validateEmployeePersonalDataForm(values: EmployeePersonalDataValues) {
 
   if (!values.workplace.trim()) {
     errors.workplace = 'Выберите место работы'
-  } else if (
-    !EMPLOYEE_WORKPLACE_OPTIONS.includes(values.workplace.trim())
-  ) {
-    errors.workplace = 'Выберите место работы из списка'
   }
 
   if (!values.phone.trim()) {
@@ -232,4 +262,10 @@ function getErrorMessage(error: unknown) {
   }
 
   return 'Не удалось сохранить персональные данные'
+}
+
+function shouldUseCustomWorkplaceInput(value: string) {
+  const normalizedValue = value.trim()
+
+  return normalizedValue !== '' && !isKnownEmployeeWorkplace(normalizedValue)
 }

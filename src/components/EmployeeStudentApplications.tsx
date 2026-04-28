@@ -50,10 +50,6 @@ export function EmployeeStudentApplications() {
     pathname === appRoutes.employeeStudentApplicationsMine
       ? 'Мои заявки'
       : 'Заявки студентов'
-  const actingContextLabel = actingAsFullName
-    ? `Вы действуете как ${actingAsFullName}`
-    : 'Вы действуете от своего имени'
-
   useEffect(() => {
     if (!isAdmin) {
       return
@@ -152,7 +148,15 @@ export function EmployeeStudentApplications() {
       />
 
       <section className="employee-dashboard__acting-banner" aria-label="Текущий режим действий">
-        <p className="employee-dashboard__acting-label">{actingContextLabel}</p>
+        <p className="employee-dashboard__acting-label">
+          {actingAsFullName ? (
+            <>
+              Вы действуете как <strong>{actingAsFullName}</strong>
+            </>
+          ) : (
+            'Вы действуете от своего имени'
+          )}
+        </p>
         <button
           className="employee-dashboard__acting-switch"
           type="button"

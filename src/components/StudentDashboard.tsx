@@ -72,6 +72,7 @@ export function StudentDashboard() {
             applicationDisciplineId: discipline.id,
             disciplineId: discipline.disciplineId,
             label: presentation.disciplineLabel,
+            program: presentation.program.name,
             lecturerName: discipline.lecturerName,
             motivation: discipline.motivation,
             priority: discipline.priority,
@@ -134,6 +135,7 @@ export function StudentDashboard() {
             label: '',
             lecturerName: item.lecturerName,
             motivation: item.motivation,
+            program: '',
             priority: item.priority,
             seminarianName: item.seminarianName,
             status: toStudentStatusLabel(item.status),
@@ -403,6 +405,7 @@ interface PriorityModalItem {
   label: string
   lecturerName: string
   motivation: string
+  program: string
   priority: number
   seminarianName: string
   status: string
@@ -505,7 +508,7 @@ function PriorityModal({
             <div className="application-priority-modal">
               <p className="application-form__notice-text">
                 Перетащите дисциплины со статусом «Новая», чтобы изменить порядок приоритетов.
-                Заявки с другими статусами остаются на своих местах.
+                Заявки с другими статусами остаются на своих местах
               </p>
               {draftItems.length > 0 ? (
                 <div className="application-priority-modal__list">
@@ -533,6 +536,7 @@ function PriorityModal({
                       <span className="application-priority-modal__index">{item.priority}</span>
                       <div className="application-priority-modal__content">
                         <strong>{item.label}</strong>
+                        <span>{item.program}</span>
                         <span>{item.status}</span>
                       </div>
                     </div>

@@ -12,9 +12,11 @@ import {
 } from '../api/lookupsApi'
 import {
   getEmployeeActingContext,
+  getCurrentEmployeeProfile,
   getEmployeeSessionContext,
 } from '../api/usersApi'
 import { useCampaignAccess } from './useCampaignAccess'
+import { EMPLOYEE_MANAGER_POSITION } from './useEmployeePersonalDataForm'
 import { getAuthSession } from '../utils/authSessionStorage'
 import type {
   EmployeeApplicationDetails,
@@ -43,6 +45,7 @@ export function useEmployeeApplicationDetails() {
     useState<EmployeeApplicationDisciplineStatus>('NEW')
   const [assignmentDraft, setAssignmentDraft] = useState('')
   const [actingAsFullName, setActingAsFullName] = useState<string | null>(null)
+  const [currentEmployeePosition, setCurrentEmployeePosition] = useState('')
   const [isActingConfirmOpen, setIsActingConfirmOpen] = useState(false)
   const [formError, setFormError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -95,14 +98,19 @@ export function useEmployeeApplicationDetails() {
 
     async function loadActingContext() {
       try {
-        const context = await getEmployeeActingContext()
+        const [context, profile] = await Promise.all([
+          getEmployeeActingContext(),
+          getCurrentEmployeeProfile(),
+        ])
 
         if (isMounted) {
           setActingAsFullName(context.actingAsFullName)
+          setCurrentEmployeePosition(profile.position ?? '')
         }
       } catch {
         if (isMounted) {
           setActingAsFullName(null)
+          setCurrentEmployeePosition('')
         }
       }
     }
@@ -131,24 +139,29 @@ export function useEmployeeApplicationDetails() {
       : false
 
   const plannedPositionsCount = useMemo(
-    () =>
-      details?.applicationDiscipline.approvedModules.reduce(
-        (total, item) => total + item.positionsCount,
+    () => {
+      if (!details?.applicationDiscipline.approvedModules.length) {
+        return 0
+      }
+
+      return details.applicationDiscipline.approvedModules.reduce(
+        (maxPositionsCount, item) => Math.max(maxPositionsCount, item.positionsCount),
         0,
-      ) ?? 0,
+      )
+    },
     [details?.applicationDiscipline.approvedModules],
   )
 
   const selectedPositionsCount = useMemo(
     () =>
-      moduleRows.reduce((total, row) => {
+      moduleRows.reduce((maxPositionsCount, row) => {
         const positionsCount = Number(row.positionsCount)
 
         if (!Number.isInteger(positionsCount) || positionsCount < 0) {
-          return total
+          return maxPositionsCount
         }
 
-        return total + positionsCount
+        return Math.max(maxPositionsCount, positionsCount)
       }, 0),
     [moduleRows],
   )
@@ -175,6 +188,8 @@ export function useEmployeeApplicationDetails() {
     : 'Новая'
 
   const hasAssignment = Boolean(details?.applicationDiscipline.assignment?.trim())
+  const isManagerActingFromSelf =
+    currentEmployeePosition.trim() === EMPLOYEE_MANAGER_POSITION && !actingAsFullName
 
   const availableStatusOptions = useMemo<EmployeeApplicationDisciplineStatus[]>(() => {
     if (!details) {
@@ -290,12 +305,18 @@ export function useEmployeeApplicationDetails() {
     },
     plannedPositionsCount,
     requestStatusSave: async () => {
+      if (isManagerActingFromSelf) {
+        window.dispatchEvent(new CustomEvent('ta:open-session-context'))
+        return 'session-context-required'
+      }
+
       if (actingAsFullName) {
         setIsActingConfirmOpen(true)
-        return
+        return 'confirmation-required'
       }
 
       await persistStatusChange()
+      return 'saved'
     },
     confirmActingStatusSave: async () => {
       await persistStatusChange()
@@ -305,10 +326,17 @@ export function useEmployeeApplicationDetails() {
     },
     refreshActingContext: async () => {
       try {
-        const context = await getEmployeeActingContext()
+        const [context, profile] = await Promise.all([
+          getEmployeeActingContext(),
+          getCurrentEmployeeProfile(),
+        ])
         setActingAsFullName(context.actingAsFullName)
+        setCurrentEmployeePosition(profile.position ?? '')
+        return context
       } catch {
         setActingAsFullName(null)
+        setCurrentEmployeePosition('')
+        return { actingAsFullName: null }
       }
     },
     reopenActingConfirm: () => {
@@ -351,20 +379,22 @@ export function useEmployeeApplicationDetails() {
       field: 'positionsCount',
       value: string,
     ) => {
+      const normalizedValue = normalizePositionsCountInput(value, maxPositionsPerModule)
+
       setModuleRows((current) => {
         const nextRows = current.map((row) =>
-          row.id === rowId ? { ...row, [field]: value } : row,
+          row.id === rowId ? { ...row, [field]: normalizedValue } : row,
         )
 
         if (
           !hasAppliedModuleAutofill &&
           field === 'positionsCount' &&
-          value.trim() !== '' &&
-          Number(value) > 0
+          normalizedValue.trim() !== '' &&
+          Number(normalizedValue) > 0
         ) {
           setHasAppliedModuleAutofill(true)
           return nextRows.map((row) =>
-            row.id === rowId ? row : { ...row, positionsCount: value },
+            row.id === rowId ? row : { ...row, positionsCount: normalizedValue },
           )
         }
 
@@ -610,4 +640,22 @@ function hasAnyAssignmentValue(value: string) {
     .split(';\n')
     .map((item) => item.trim())
     .some(Boolean)
+}
+
+function normalizePositionsCountInput(value: string, maxPositionsPerModule: number | null) {
+  const trimmedValue = value.trim()
+
+  if (trimmedValue === '') {
+    return ''
+  }
+
+  if (!/^\d+$/.test(trimmedValue)) {
+    return value
+  }
+
+  if (maxPositionsPerModule === null) {
+    return trimmedValue
+  }
+
+  return String(Math.min(Number(trimmedValue), maxPositionsPerModule))
 }

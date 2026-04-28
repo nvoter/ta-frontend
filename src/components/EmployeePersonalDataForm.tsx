@@ -1,4 +1,5 @@
 import {
+  EMPLOYEE_OTHER_WORKPLACE_OPTION,
   EMPLOYEE_POSITION_OPTIONS,
   EMPLOYEE_WORKPLACE_OPTIONS,
   useEmployeePersonalDataForm,
@@ -22,8 +23,10 @@ export function EmployeePersonalDataForm({
     handleCancel,
     handleInputChange,
     handleSubmit,
+    isCustomWorkplace,
     isLoading,
     isSaving,
+    resetWorkplaceToSelect,
     submitError,
     values,
   } = useEmployeePersonalDataForm({ embedded, onCancel, onSaved })
@@ -60,15 +63,29 @@ export function EmployeePersonalDataForm({
             placeholder="Иванов Иван Иванович"
             value={values.fullName}
           />
-          <SelectField
-            error={errors.workplace}
-            label="Место работы"
-            name="workplace"
-            onChange={handleInputChange}
-            options={EMPLOYEE_WORKPLACE_OPTIONS}
-            placeholder="Выберите место работы"
-            value={values.workplace}
-          />
+          {isCustomWorkplace ? (
+            <InputField
+              error={errors.workplace}
+              label="Место работы"
+              name="workplace"
+              onChange={handleInputChange}
+              placeholder="Введите место работы"
+              onReset={resetWorkplaceToSelect}
+              resetLabel="Выбрать из списка"
+              value={values.workplace}
+            />
+          ) : (
+            <SelectField
+              error={errors.workplace}
+              label="Место работы"
+              name="workplace"
+              onChange={handleInputChange}
+              options={EMPLOYEE_WORKPLACE_OPTIONS}
+              placeholder="Выберите место работы"
+              trailingOption={EMPLOYEE_OTHER_WORKPLACE_OPTION}
+              value={values.workplace}
+            />
+          )}
           <SelectField
             error={errors.position}
             label="Должность"
@@ -137,8 +154,10 @@ interface BaseFieldProps {
 
 interface InputFieldProps extends BaseFieldProps {
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void
+  onReset?: () => void
   placeholder?: string
   readOnly?: boolean
+  resetLabel?: string
   type?: string
 }
 
@@ -147,8 +166,10 @@ function InputField({
   label,
   name,
   onChange,
+  onReset,
   placeholder,
   readOnly,
+  resetLabel,
   type = 'text',
   value,
 }: InputFieldProps) {
@@ -175,6 +196,11 @@ function InputField({
         onChange={onChange}
       />
       <div className="auth-form__meta">
+        {onReset && resetLabel ? (
+          <button className="auth-form__text-button" type="button" onClick={onReset}>
+            {resetLabel}
+          </button>
+        ) : null}
         {error ? (
           <div className="auth-form__error-box" role="alert">
             <p className="auth-form__error">{error}</p>
@@ -189,6 +215,7 @@ interface SelectFieldProps extends BaseFieldProps {
   onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void
   options: readonly string[]
   placeholder: string
+  trailingOption?: string
 }
 
 function SelectField({
@@ -198,6 +225,7 @@ function SelectField({
   onChange,
   options,
   placeholder,
+  trailingOption,
   value,
 }: SelectFieldProps) {
   const inputId = `employee-personal-data-${name}`
@@ -225,6 +253,9 @@ function SelectField({
             {option}
           </option>
         ))}
+        {trailingOption ? (
+          <option value={trailingOption}>{trailingOption}</option>
+        ) : null}
       </select>
       <div className="auth-form__meta">
         {error ? (

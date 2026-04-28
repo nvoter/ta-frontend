@@ -16,6 +16,7 @@ import {
 import { appRoutes } from '../routes/appRoutes'
 import { logoutAndRedirect } from '../utils/logout'
 import { navigateTo } from '../utils/navigation'
+import { getPositionsLabel } from '../utils/positionsLabel'
 import { LoadingIndicator } from './LoadingIndicator'
 
 export function EmployeeApplicationDetails() {
@@ -276,7 +277,7 @@ export function EmployeeApplicationDetails() {
                       {disciplineWorkloadByModule.map((item) => (
                         <div key={item.module} className="employee-workload__item">
                           <span>Модуль {item.module}</span>
-                          <strong>{item.positionsCount}</strong>
+                          <strong>{`${item.positionsCount} ${getPositionsLabel(item.positionsCount)}`}</strong>
                         </div>
                       ))}
                     </div>
@@ -315,7 +316,7 @@ export function EmployeeApplicationDetails() {
                       {visibleWorkload.perModule.map((item) => (
                         <div key={item.module} className="employee-workload__item">
                           <span>Модуль {item.module}</span>
-                          <strong>{item.positionsCount}</strong>
+                          <strong>{`${item.positionsCount} ${getPositionsLabel(item.positionsCount)}`}</strong>
                         </div>
                       ))}
                     </div>
@@ -326,19 +327,19 @@ export function EmployeeApplicationDetails() {
                     <div className="employee-workload__list">
                         <div className="employee-workload__item">
                           <span>Модуль 1</span>
-                          <strong>0</strong>
+                          <strong>{`0 ${getPositionsLabel(0)}`}</strong>
                         </div>
                         <div className="employee-workload__item">
                           <span>Модуль 2</span>
-                          <strong>0</strong>
+                          <strong>{`0 ${getPositionsLabel(0)}`}</strong>
                         </div>
                         <div className="employee-workload__item">
                           <span>Модуль 3</span>
-                          <strong>0</strong>
+                          <strong>{`0 ${getPositionsLabel(0)}`}</strong>
                         </div>
                         <div className="employee-workload__item">
                           <span>Модуль 4</span>
-                          <strong>0</strong>
+                          <strong>{`0 ${getPositionsLabel(0)}`}</strong>
                         </div>
                     </div>
                   </div>
@@ -542,7 +543,7 @@ export function EmployeeApplicationDetails() {
                 <div className="employee-inline-form__header">
                   <div className="employee-inline-form__heading">
                     <h3>Резервирование студента</h3>
-                    <p>Сохранённое распределение позиций по модулям</p>
+                    <p>Сохраненное распределение позиций по модулям</p>
                   </div>
                   <div className="employee-inline-form__summary" aria-label="Сводка по плану привлечения">
                     <div className="employee-inline-form__summary-item">
@@ -564,7 +565,12 @@ export function EmployeeApplicationDetails() {
                             {`Модуль ${item.module}`}
                           </span>
                         </div>
-                        <div className="employee-dialog__value">{item.positionsCount}</div>
+                        <div className="employee-dialog__value-group">
+                          <div className="employee-dialog__value">{item.positionsCount}</div>
+                          <span className="employee-dialog__value-unit">
+                            {getPositionsLabel(item.positionsCount)}
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -651,19 +657,24 @@ export function EmployeeApplicationDetails() {
                                 </span>
                               </div>
 
-                              <label className="auth-form__field employee-dialog__field">
-                                <input
-                                  className="auth-form__input employee-dialog__positions-input"
-                                  type="number"
-                                  min="0"
-                                  max={maxPositionsPerModule ?? undefined}
-                                  inputMode="numeric"
-                                  value={row.positionsCount}
-                                  onChange={(event) =>
-                                    setModuleField(row.id, 'positionsCount', event.target.value)
-                                  }
-                                />
-                              </label>
+                              <div className="employee-dialog__value-group">
+                                <label className="auth-form__field employee-dialog__field">
+                                  <input
+                                    className="auth-form__input employee-dialog__positions-input"
+                                    type="number"
+                                    min="0"
+                                    max={maxPositionsPerModule ?? undefined}
+                                    inputMode="numeric"
+                                    value={row.positionsCount}
+                                    onChange={(event) =>
+                                      setModuleField(row.id, 'positionsCount', event.target.value)
+                                    }
+                                  />
+                                </label>
+                                <span className="employee-dialog__value-unit">
+                                  {getPositionsLabel(Number(row.positionsCount) || 0)}
+                                </span>
+                              </div>
                             </div>
                           ))
                         : null}
@@ -686,8 +697,12 @@ export function EmployeeApplicationDetails() {
                       <button
                         className="auth-form__button"
                         type="button"
-                        onClick={() => {
-                          void requestStatusSave()
+                        onClick={async () => {
+                          const result = await requestStatusSave()
+
+                          if (result === 'session-context-required') {
+                            setShouldReturnToConfirmModal(true)
+                          }
                         }}
                         disabled={isSaving}
                       >
@@ -759,7 +774,12 @@ export function EmployeeApplicationDetails() {
 
       {isActingConfirmOpen ? (
         <ConfirmModal
-          description={`Изменение статуса будет выполнено от имени преподавателя ${actingAsFullName}`}
+          description={
+            <>
+              Изменение статуса будет выполнено от имени преподавателя{' '}
+              <strong>{actingAsFullName}</strong>
+            </>
+          }
           title="Подтверждение действия"
           onClose={closeActingConfirm}
           onConfirm={() => {
@@ -789,11 +809,11 @@ export function EmployeeApplicationDetails() {
             }}
             onSubmitted={() => {
               setIsSessionContextModalOpen(false)
-              void refreshActingContext().then(() => {
-                if (shouldReturnToConfirmModal) {
+              void refreshActingContext().then((context) => {
+                if (shouldReturnToConfirmModal && context.actingAsFullName) {
                   reopenActingConfirm()
-                  setShouldReturnToConfirmModal(false)
                 }
+                setShouldReturnToConfirmModal(false)
               })
             }}
           />
@@ -863,7 +883,7 @@ function ConfirmModal({
   onConfirm,
   onSwitch,
 }: {
-  description: string
+  description: React.ReactNode
   title: string
   onClose: () => void
   onConfirm: () => void
@@ -903,9 +923,16 @@ function AssignmentEditor({
         ...current,
         ...patch,
       }
+      const normalizedFields =
+        typeof patch.didacticName === 'string' && patch.didacticName.trim() === ''
+          ? {
+              ...nextFields,
+              didacticCount: '',
+            }
+          : nextFields
 
-      onChange(buildAssignment(nextFields))
-      return nextFields
+      onChange(buildAssignment(normalizedFields))
+      return normalizedFields
     })
   }
 
@@ -931,7 +958,7 @@ function AssignmentEditor({
         <span className="auth-form__label">Разработка дидактических материалов</span>
         <div className="employee-assignment-grid">
           <input className="auth-form__input" type="text" placeholder="Наименование" value={fields.didacticName} onChange={(event) => updateFields({ didacticName: event.target.value })} />
-          <input className="auth-form__input" type="number" min="0" placeholder="Количество" value={fields.didacticCount} onChange={(event) => updateFields({ didacticCount: event.target.value })} />
+          <input className="auth-form__input" type="number" min="0" placeholder="Количество" value={fields.didacticCount} onChange={(event) => updateFields({ didacticCount: event.target.value })} disabled={!fields.didacticName.trim()} />
         </div>
       </label>
       <label className="auth-form__field auth-form__field--wide">
@@ -1010,7 +1037,7 @@ function buildAssignment(fields: ReturnType<typeof parseAssignment>) {
     formatAssignmentLine('Помощь в проведении занятий', fields.classesCount, 'занятий'),
     formatAssignmentLine('Проверка работ', fields.workChecksCount, 'шт.'),
     formatAssignmentLine('Помощь в организации и проведении элементов контроля', fields.controlElementsCount, 'шт.'),
-    fields.didacticName.trim() || fields.didacticCount.trim()
+    fields.didacticName.trim()
       ? `Разработка дидактических материалов – ${fields.didacticName}${fields.didacticName.trim() && fields.didacticCount.trim() ? ', ' : ''}${fields.didacticCount.trim() ? `${fields.didacticCount.trim()} шт.` : ''}`
       : '',
     formatAssignmentLine('Консультирование студентов', fields.consultationsCount, 'консультаций'),
