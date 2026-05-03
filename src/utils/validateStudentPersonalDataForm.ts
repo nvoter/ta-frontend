@@ -2,12 +2,14 @@ import type {
   StudentPersonalDataFormErrors,
   StudentPersonalDataFormValues,
 } from '../types/studentPersonalData'
+import { isPostgraduateStudentEmail } from './studentEmail'
 import { validateStudentEmail } from './validateStudentEmail'
 
 export function validateStudentPersonalDataForm(
   values: StudentPersonalDataFormValues,
 ) {
   const errors: StudentPersonalDataFormErrors = {}
+  const isPostgraduate = isPostgraduateStudentEmail(values.email)
 
   if (!values.agreeToDataProcessing) {
     errors.agreeToDataProcessing =
@@ -36,10 +38,7 @@ export function validateStudentPersonalDataForm(
     errors.faculty = 'Введите факультет'
   }
 
-  if (
-    values.educationLevel.trim() !== 'Аспирантура' &&
-    !values.educationalProgram.trim()
-  ) {
+  if (!isPostgraduate && !values.educationalProgram.trim()) {
     errors.educationalProgram = 'Введите образовательную программу'
   }
 

@@ -6,8 +6,10 @@ import { requestJson, requestVoid } from './httpClient'
 
 export interface CampaignDto {
   endsAt: string
+  foreignCitizenDocumentFormUrl: string | null
   id: string
   isActive: boolean
+  russianCitizenDocumentFormUrl: string | null
   startsAt: string
 }
 
@@ -17,12 +19,16 @@ interface CampaignsResponse {
 
 interface CreateCampaignRequest {
   endsAt: string
+  foreignCitizenDocumentFormUrl: string | null
+  russianCitizenDocumentFormUrl: string | null
   startsAt: string
 }
 
 interface UpdateCampaignRequest {
   endsAt?: string
+  foreignCitizenDocumentFormUrl?: string | null
   isActive?: boolean
+  russianCitizenDocumentFormUrl?: string | null
   startsAt?: string
 }
 

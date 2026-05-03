@@ -22,6 +22,7 @@ export function StudentPersonalDataForm({
     handleInputChange,
     handleSubmit,
     isLoading,
+    isPostgraduate,
     isSaving,
     lockedFields,
     submitError,
@@ -65,7 +66,7 @@ export function StudentPersonalDataForm({
             label="Корпоративная электронная почта"
             name="email"
             onChange={handleInputChange}
-            placeholder="name@edu.hse.ru"
+            placeholder="name@edu.hse.ru или name@hse.ru"
             readOnly={lockedFields.email}
             required
             type="email"
@@ -87,7 +88,7 @@ export function StudentPersonalDataForm({
             label="Уровень образования"
             name="educationLevel"
             options={educationLevelOptions}
-            readOnly={lockedFields.educationLevel}
+            readOnly={lockedFields.educationLevel || isPostgraduate}
             required
             value={values.educationLevel}
             onChange={handleInputChange}
@@ -104,22 +105,24 @@ export function StudentPersonalDataForm({
             options={facultyOptions}
             onChange={handleInputChange}
           />
-          <FormField
-            error={errors.educationalProgram}
-            label="Образовательная программа"
-            name="educationalProgram"
-            onChange={handleInputChange}
-            placeholder="Программная инженерия"
-            readOnly={lockedFields.educationalProgram}
-            required={values.educationLevel !== 'Аспирантура'}
-            value={values.educationalProgram}
-          />
+          {!isPostgraduate ? (
+            <FormField
+              error={errors.educationalProgram}
+              label="Образовательная программа"
+              name="educationalProgram"
+              onChange={handleInputChange}
+              placeholder="Программная инженерия"
+              readOnly={lockedFields.educationalProgram}
+              required
+              value={values.educationalProgram}
+            />
+          ) : null}
           <FormField
             error={errors.yearOfStudy}
             label="Год обучения"
             name="yearOfStudy"
             onChange={handleInputChange}
-            placeholder="3"
+            placeholder="Введите свой курс"
             readOnly={lockedFields.yearOfStudy}
             required
             value={values.yearOfStudy}
@@ -190,22 +193,6 @@ export function StudentPersonalDataForm({
 
         <div className="profile-form__checkboxes">
           <CheckboxField
-            checked={values.hasPrimaryPhone}
-            error={errors.hasPrimaryPhone}
-            label="Подтверждаю, что указанный номер является основным"
-            name="hasPrimaryPhone"
-            onChange={handleInputChange}
-            required
-          />
-          <CheckboxField
-            checked={values.hasConfirmedPublicServicesAccount}
-            error={errors.hasConfirmedPublicServicesAccount}
-            label="Имею подтвержденный аккаунт на госуслугах"
-            name="hasConfirmedPublicServicesAccount"
-            onChange={handleInputChange}
-            required
-          />
-          <CheckboxField
             checked={values.receivesSocialPension}
             label="Получаю социальную пенсию"
             name="receivesSocialPension"
@@ -223,6 +210,22 @@ export function StudentPersonalDataForm({
               </p>
             </div>
           ) : null}
+          <CheckboxField
+            checked={values.hasPrimaryPhone}
+            error={errors.hasPrimaryPhone}
+            label="Подтверждаю, что указанный номер является основным"
+            name="hasPrimaryPhone"
+            onChange={handleInputChange}
+            required
+          />
+          <CheckboxField
+            checked={values.hasConfirmedPublicServicesAccount}
+            error={errors.hasConfirmedPublicServicesAccount}
+            label="Имею подтвержденный аккаунт на госуслугах"
+            name="hasConfirmedPublicServicesAccount"
+            onChange={handleInputChange}
+            required
+          />
           <CheckboxField
             checked={values.agreeToDataProcessing}
             className="checkbox-field--emphasis"
@@ -523,8 +526,8 @@ function renderFieldLabel(label: string, required?: boolean) {
 function renderNodeLabel(label: React.ReactNode, required?: boolean) {
   return (
     <>
-      {required ? <span className="form-required-mark" aria-hidden="true">* </span> : null}
       {label}
+      {required ? <span className="form-required-mark" aria-hidden="true"> *</span> : null}
     </>
   )
 }

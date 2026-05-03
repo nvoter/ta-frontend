@@ -21,8 +21,8 @@ export function StudentAuthForm() {
         <p className="eyebrow">Учебные ассистенты ФКН</p>
         <h2 id="student-auth-title">Вход для студента</h2>
         <p className="auth-card__description">
-          Введите корпоративную электронную почту для входа в личный кабинет
-          учебного ассистента
+          Введите корпоративную электронную почту в домене @edu.hse.ru или
+          @hse.ru для входа в личный кабинет учебного ассистента
         </p>
       </div>
 
@@ -43,7 +43,7 @@ export function StudentAuthForm() {
             type="email"
             inputMode="email"
             autoComplete="email"
-            placeholder="name@edu.hse.ru"
+            placeholder="name@edu.hse.ru или name@hse.ru"
             value={email}
             onChange={handleChange}
             onBlur={handleBlur}

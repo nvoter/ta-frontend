@@ -3,19 +3,16 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
 import { AppNavbar } from './AppNavbar'
+import { getCurrentCampaign, type CampaignDto } from '../api/applicationsApi'
 import { useCampaignAccess } from '../hooks/useCampaignAccess'
 import { getCurrentStudent, type StudentDto } from '../api/usersApi'
 import { logoutAndRedirect } from '../utils/logout'
 import { navigateTo } from '../utils/navigation'
 import { appRoutes } from '../routes/appRoutes'
 
-const RUSSIAN_STUDENT_DOCUMENTS_WIDGET_URL =
-  'https://www.hse.ru/n/exp/widgets/widgetPassExpressPoll/915621201.js'
-const FOREIGN_STUDENT_DOCUMENTS_WIDGET_URL =
-  'https://www.hse.ru/n/exp/widgets/widgetPassExpressPoll/915609566.js'
-
 export function StudentDocuments() {
   const [student, setStudent] = useState<StudentDto | null>(null)
+  const [campaign, setCampaign] = useState<CampaignDto | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const { hasActiveCampaign } = useCampaignAccess()
@@ -27,13 +24,17 @@ export function StudentDocuments() {
 
     async function loadStudent() {
       try {
-        const currentStudent = await getCurrentStudent()
+        const [currentStudent, currentCampaign] = await Promise.all([
+          getCurrentStudent(),
+          getCurrentCampaign(),
+        ])
 
         if (!isMounted) {
           return
         }
 
         setStudent(currentStudent)
+        setCampaign(currentCampaign)
       } catch (loadError) {
         if (isMounted) {
           setError(getErrorMessage(loadError))
@@ -53,15 +54,15 @@ export function StudentDocuments() {
   }, [])
 
   const widgetUrl = useMemo(() => {
-    if (!student) {
-      return RUSSIAN_STUDENT_DOCUMENTS_WIDGET_URL
+    if (!student || !campaign) {
+      return null
     }
 
-    return getDocumentsWidgetUrl(student)
-  }, [student])
+    return getDocumentsWidgetUrl(student, campaign)
+  }, [campaign, student])
 
   useEffect(() => {
-    if (isLoading || !widgetContainerRef.current) {
+    if (isLoading || !widgetContainerRef.current || !widgetUrl) {
       return
     }
 
@@ -192,6 +193,14 @@ export function StudentDocuments() {
             <div className="auth-form__notice auth-form__notice--compact" role="status">
               <p>Вы уже предоставили пакет документов</p>
             </div>
+          ) : !campaign ? (
+            <div className="auth-form__notice auth-form__notice--compact" role="status">
+              <p>Сейчас нет активной кампании</p>
+            </div>
+          ) : !widgetUrl ? (
+            <div className="auth-form__notice auth-form__notice--compact" role="status">
+              <p>Для текущей кампании ссылка на форму документов пока не настроена</p>
+            </div>
           ) : (
             <div
               className="student-documents-frame-wrap"
@@ -210,12 +219,18 @@ export function StudentDocuments() {
   )
 }
 
-function getDocumentsWidgetUrl(student: StudentDto) {
+function getDocumentsWidgetUrl(student: StudentDto, campaign: CampaignDto) {
   if (isRussianCitizen(student.citizenship)) {
-    return RUSSIAN_STUDENT_DOCUMENTS_WIDGET_URL
+    return normalizeWidgetUrl(campaign.russianCitizenDocumentFormUrl)
   }
 
-  return FOREIGN_STUDENT_DOCUMENTS_WIDGET_URL
+  return normalizeWidgetUrl(campaign.foreignCitizenDocumentFormUrl)
+}
+
+function normalizeWidgetUrl(value: string | null) {
+  const normalized = value?.trim()
+
+  return normalized || null
 }
 
 function isRussianCitizen(value: string | null) {

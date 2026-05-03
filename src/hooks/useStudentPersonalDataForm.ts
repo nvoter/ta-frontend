@@ -5,6 +5,7 @@ import {
   updateCurrentStudentProfile,
 } from '../api/usersApi'
 import { appRoutes } from '../routes/appRoutes'
+import type { StudentPersonalDataFormValues } from '../types/studentPersonalData'
 import {
   getStudentPersonalDataDraft,
   saveStudentPersonalDataDraft,
@@ -12,6 +13,10 @@ import {
 import { getAuthFlow } from '../utils/authFlowStorage'
 import { navigateTo } from '../utils/navigation'
 import { sortStringsRu } from '../utils/sortOptions'
+import {
+  getStudentEmailKind,
+  isPostgraduateStudentEmail,
+} from '../utils/studentEmail'
 import { validateStudentPersonalDataForm } from '../utils/validateStudentPersonalDataForm'
 
 interface UseStudentPersonalDataFormOptions {
@@ -160,10 +165,10 @@ export function useStudentPersonalDataForm(
   const [values, setValues] = useState(() => {
     const draft = getStudentPersonalDataDraft()
 
-    return {
+    return normalizeStudentPersonalDataValues({
       ...draft,
       email: draft.email || authFlow?.email || '',
-    }
+    })
   })
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -171,6 +176,11 @@ export function useStudentPersonalDataForm(
   const [submitError, setSubmitError] = useState('')
   const [lockedFields, setLockedFields] = useState<Record<string, boolean>>({})
   const studentEmail = authFlow?.email ?? values.email
+  const studentEmailKind = getStudentEmailKind(studentEmail)
+  const isPostgraduate = studentEmailKind === 'postgraduate'
+  const educationLevelOptions = isPostgraduate
+    ? ['Аспирантура']
+    : EDUCATION_LEVEL_OPTIONS.filter((option) => option !== 'Аспирантура')
 
   const errors = useMemo(
     () => (isSubmitted ? validateStudentPersonalDataForm(values) : {}),
@@ -198,7 +208,7 @@ export function useStudentPersonalDataForm(
         }
 
         setValues((currentValues) => {
-          const nextValues = {
+          const nextValues = normalizeStudentPersonalDataValues({
             ...currentValues,
             citizenship: student.citizenship || currentValues.citizenship,
             dateOfBirth: student.birthDate || currentValues.dateOfBirth,
@@ -214,7 +224,7 @@ export function useStudentPersonalDataForm(
             phone: student.phone || currentValues.phone,
             telegram: student.telegram || currentValues.telegram,
             yearOfStudy: student.course || currentValues.yearOfStudy,
-          }
+          })
 
           saveStudentPersonalDataDraft(nextValues)
           return nextValues
@@ -266,8 +276,10 @@ export function useStudentPersonalDataForm(
       nextValues.faculty = ''
     }
 
-    setValues(nextValues)
-    saveStudentPersonalDataDraft(nextValues)
+    const normalizedValues = normalizeStudentPersonalDataValues(nextValues)
+
+    setValues(normalizedValues)
+    saveStudentPersonalDataDraft(normalizedValues)
     setSubmitError('')
   }
 
@@ -318,7 +330,7 @@ export function useStudentPersonalDataForm(
 
   return {
     citizenshipOptions: CITIZENSHIP_OPTIONS,
-    educationLevelOptions: EDUCATION_LEVEL_OPTIONS,
+    educationLevelOptions,
     errors,
     facultyOptions:
       FACULTY_OPTIONS_BY_LEVEL[
@@ -327,6 +339,7 @@ export function useStudentPersonalDataForm(
     handleInputChange,
     handleSubmit,
     isLoading,
+    isPostgraduate,
     isSaving,
     lockedFields,
     submitError,
@@ -361,4 +374,24 @@ function getErrorMessage(error: unknown) {
   }
 
   return 'Не удалось сохранить персональные данные'
+}
+
+function normalizeStudentPersonalDataValues(values: StudentPersonalDataFormValues) {
+  if (isPostgraduateStudentEmail(values.email)) {
+    return {
+      ...values,
+      educationLevel: 'Аспирантура',
+      educationalProgram: '',
+    }
+  }
+
+  if (values.educationLevel === 'Аспирантура') {
+    return {
+      ...values,
+      educationLevel: '',
+      faculty: '',
+    }
+  }
+
+  return values
 }

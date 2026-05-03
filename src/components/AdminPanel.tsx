@@ -36,6 +36,8 @@ export function AdminPanel() {
     busyAction,
     campaignEdits,
     campaignEndAt,
+    campaignForeignCitizenDocumentFormUrl,
+    campaignRussianCitizenDocumentFormUrl,
     campaignStartAt,
     campaigns,
     clearCampaignFormResult,
@@ -87,6 +89,8 @@ export function AdminPanel() {
     dismissAdminToast,
     setCampaignEdit,
     setCampaignEndAt,
+    setCampaignForeignCitizenDocumentFormUrl,
+    setCampaignRussianCitizenDocumentFormUrl,
     setCampaignStartAt,
     setDisciplineCourse,
     setDisciplineForm,
@@ -1261,6 +1265,30 @@ export function AdminPanel() {
               <span className="auth-form__label">Окончание кампании</span>
               <input className="auth-form__input" type="datetime-local" value={campaignEndAt} onChange={(event) => setCampaignEndAt(event.target.value)} />
             </label>
+            <label className="auth-form__field">
+              <span className="auth-form__label">Ссылка для граждан РФ</span>
+              <input
+                className="auth-form__input"
+                type="url"
+                placeholder="https://..."
+                value={campaignRussianCitizenDocumentFormUrl}
+                onChange={(event) =>
+                  setCampaignRussianCitizenDocumentFormUrl(event.target.value)
+                }
+              />
+            </label>
+            <label className="auth-form__field">
+              <span className="auth-form__label">Ссылка для иностранцев</span>
+              <input
+                className="auth-form__input"
+                type="url"
+                placeholder="https://..."
+                value={campaignForeignCitizenDocumentFormUrl}
+                onChange={(event) =>
+                  setCampaignForeignCitizenDocumentFormUrl(event.target.value)
+                }
+              />
+            </label>
           </div>
 
           <div className="admin-actions-row">
@@ -1301,6 +1329,34 @@ export function AdminPanel() {
                 value={campaignEdits[editingCampaignId]?.endsAt ?? ''}
                 onChange={(event) =>
                   setCampaignEdit(editingCampaignId, { endsAt: event.target.value })
+                }
+              />
+            </label>
+            <label className="auth-form__field">
+              <span className="auth-form__label">Ссылка для граждан РФ</span>
+              <input
+                className="auth-form__input"
+                type="url"
+                placeholder="https://..."
+                value={campaignEdits[editingCampaignId]?.russianCitizenDocumentFormUrl ?? ''}
+                onChange={(event) =>
+                  setCampaignEdit(editingCampaignId, {
+                    russianCitizenDocumentFormUrl: event.target.value,
+                  })
+                }
+              />
+            </label>
+            <label className="auth-form__field">
+              <span className="auth-form__label">Ссылка для иностранцев</span>
+              <input
+                className="auth-form__input"
+                type="url"
+                placeholder="https://..."
+                value={campaignEdits[editingCampaignId]?.foreignCitizenDocumentFormUrl ?? ''}
+                onChange={(event) =>
+                  setCampaignEdit(editingCampaignId, {
+                    foreignCitizenDocumentFormUrl: event.target.value,
+                  })
                 }
               />
             </label>

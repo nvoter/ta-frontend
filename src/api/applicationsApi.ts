@@ -86,8 +86,10 @@ export interface ApplicationInfoDto {
 
 export interface CampaignDto {
   endsAt: string
+  foreignCitizenDocumentFormUrl: string | null
   id: string
   isActive: boolean
+  russianCitizenDocumentFormUrl: string | null
   startsAt: string
 }
 

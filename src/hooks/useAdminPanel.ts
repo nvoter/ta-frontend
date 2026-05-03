@@ -47,7 +47,9 @@ interface AdminToastMessage {
 
 interface CampaignEditState {
   endsAt: string
+  foreignCitizenDocumentFormUrl: string
   isActive: boolean
+  russianCitizenDocumentFormUrl: string
   startsAt: string
 }
 
@@ -88,6 +90,10 @@ export function useAdminPanel() {
   const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false)
   const [campaignStartAt, setCampaignStartAt] = useState('')
   const [campaignEndAt, setCampaignEndAt] = useState('')
+  const [campaignRussianCitizenDocumentFormUrl, setCampaignRussianCitizenDocumentFormUrl] =
+    useState('')
+  const [campaignForeignCitizenDocumentFormUrl, setCampaignForeignCitizenDocumentFormUrl] =
+    useState('')
 
   const [employees, setEmployees] = useState<EmployeeDto[]>([])
   const [isEmployeesLoading, setIsEmployeesLoading] = useState(true)
@@ -409,11 +415,19 @@ export function useAdminPanel() {
     await runAction('campaign-create', async () => {
       await createCampaign({
         endsAt: toIsoString(campaignEndAt),
+        foreignCitizenDocumentFormUrl: normalizeOptionalString(
+          campaignForeignCitizenDocumentFormUrl,
+        ),
+        russianCitizenDocumentFormUrl: normalizeOptionalString(
+          campaignRussianCitizenDocumentFormUrl,
+        ),
         startsAt: toIsoString(campaignStartAt),
       })
 
       setCampaignStartAt('')
       setCampaignEndAt('')
+      setCampaignRussianCitizenDocumentFormUrl('')
+      setCampaignForeignCitizenDocumentFormUrl('')
       setIsCampaignModalOpen(false)
       clearResult('campaignsForm')
       setResult('campaignsList', 'success', 'Кампания запланирована')
@@ -431,7 +445,13 @@ export function useAdminPanel() {
     await runAction(`campaign-save-${campaignId}`, async () => {
       await updateCampaign(campaignId, {
         endsAt: toIsoString(current.endsAt),
+        foreignCitizenDocumentFormUrl: normalizeOptionalString(
+          current.foreignCitizenDocumentFormUrl,
+        ),
         isActive: current.isActive,
+        russianCitizenDocumentFormUrl: normalizeOptionalString(
+          current.russianCitizenDocumentFormUrl,
+        ),
         startsAt: toIsoString(current.startsAt),
       })
 
@@ -763,6 +783,8 @@ export function useAdminPanel() {
     busyAction,
     campaignEdits,
     campaignEndAt,
+    campaignForeignCitizenDocumentFormUrl,
+    campaignRussianCitizenDocumentFormUrl,
     campaignStartAt,
     campaigns: sortedCampaigns,
     clearCampaignFormResult: () => clearResult('campaignsForm'),
@@ -821,6 +843,8 @@ export function useAdminPanel() {
     results,
     setCampaignEdit,
     setCampaignEndAt,
+    setCampaignForeignCitizenDocumentFormUrl,
+    setCampaignRussianCitizenDocumentFormUrl,
     setCampaignStartAt,
     setDisciplineForm,
     setDisciplineCourse,
@@ -930,7 +954,9 @@ function buildCampaignEdits(campaigns: CampaignDto[]) {
   return campaigns.reduce<Record<string, CampaignEditState>>((acc, campaign) => {
     acc[campaign.id] = {
       endsAt: toDateTimeLocal(campaign.endsAt),
+      foreignCitizenDocumentFormUrl: campaign.foreignCitizenDocumentFormUrl ?? '',
       isActive: campaign.isActive,
+      russianCitizenDocumentFormUrl: campaign.russianCitizenDocumentFormUrl ?? '',
       startsAt: toDateTimeLocal(campaign.startsAt),
     }
 
@@ -972,6 +998,12 @@ function toDateTimeLocal(value: string) {
 
 function toIsoString(value: string) {
   return new Date(value).toISOString()
+}
+
+function normalizeOptionalString(value: string) {
+  const normalized = value.trim()
+
+  return normalized || null
 }
 
 function getErrorMessage(error: unknown) {
