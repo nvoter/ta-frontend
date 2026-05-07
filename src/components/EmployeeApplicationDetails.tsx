@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import ArrowBackIosNewRoundedIcon from '@mui/icons-material/ArrowBackIosNewRounded'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
+import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded'
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
@@ -39,6 +40,7 @@ export function EmployeeApplicationDetails() {
     isReadOnly,
     isSaving,
     isSavingAssignment,
+    lecturerAssistantDraft,
     loadError,
     moduleRows,
     openInterestedDialog,
@@ -51,6 +53,7 @@ export function EmployeeApplicationDetails() {
     selectedModulesCount,
     selectedPositionsCount,
     setAssignmentDraft,
+    setLecturerAssistantDraft,
     setModuleField,
     setStatusDraft,
     statusDraft,
@@ -60,6 +63,7 @@ export function EmployeeApplicationDetails() {
   } = useEmployeeApplicationDetails()
   const [isSessionContextModalOpen, setIsSessionContextModalOpen] = useState(false)
   const [shouldReturnToConfirmModal, setShouldReturnToConfirmModal] = useState(false)
+  const [isRelatedDisciplinesExpanded, setIsRelatedDisciplinesExpanded] = useState(false)
 
   useEffect(() => {
     function handleOpenSessionContext() {
@@ -185,7 +189,7 @@ export function EmployeeApplicationDetails() {
           <section className="employee-details-card" aria-labelledby="student-info-title">
             <div className="employee-details-card__header">
               <h2 id="student-info-title" className="employee-details-card__title">
-                Данные студента
+                Данные о студенте / аспиранте
               </h2>
             </div>
 
@@ -261,11 +265,11 @@ export function EmployeeApplicationDetails() {
               <div className="employee-workload">
                 <div className="employee-workload__summary-grid">
                   <div className="employee-workload__summary-card">
-                    <span>Зарезервировано позиций</span>
+                    <span>Зарезервировано позиций (групп)</span>
                     <strong>{applicationDiscipline.disciplineApprovedAssistantsCount}</strong>
                   </div>
                   <div className="employee-workload__summary-card">
-                    <span>Максимум позиций</span>
+                    <span>Максимум позиций (групп)</span>
                     <strong>{applicationDiscipline.disciplineMaxAssistantsCount}</strong>
                   </div>
                 </div>
@@ -296,7 +300,7 @@ export function EmployeeApplicationDetails() {
               <div className="employee-workload">
                 <div className="employee-workload__summary-grid">
                   <div className="employee-workload__summary-card">
-                    <span>Всего позиций</span>
+                    <span>Всего позиций (групп)</span>
                     <strong>{visibleWorkload?.totalApprovedPositionsCount ?? 0}</strong>
                   </div>
                   <div className="employee-workload__summary-card">
@@ -471,6 +475,9 @@ export function EmployeeApplicationDetails() {
                       {statusLabel}
                     </span>
                   </div>
+                  {applicationDiscipline.lecturerAssistant ? (
+                    <p className="employee-details-card__updated">Ассистент лектора</p>
+                  ) : null}
                   {applicationDiscipline.status !== 'NEW' ? (
                     <p className="employee-details-card__updated">
                       Обновлен: {formatDateTime(applicationDiscipline.updatedAt)}
@@ -542,8 +549,8 @@ export function EmployeeApplicationDetails() {
               <section className="employee-inline-form employee-inline-form--readonly">
                 <div className="employee-inline-form__header">
                   <div className="employee-inline-form__heading">
-                    <h3>Резервирование студента</h3>
-                    <p>Сохраненное распределение позиций по модулям</p>
+                    <h3>Зарезервированные позиции студента / аспиранта</h3>
+                    <p>Сохраненное распределение позиций (групп) по модулям</p>
                   </div>
                   <div className="employee-inline-form__summary" aria-label="Сводка по плану привлечения">
                     <div className="employee-inline-form__summary-item">
@@ -551,7 +558,7 @@ export function EmployeeApplicationDetails() {
                       <strong>{applicationDiscipline.approvedModules.length}</strong>
                     </div>
                     <div className="employee-inline-form__summary-item">
-                      <span>ВСЕГО ПОЗИЦИЙ</span>
+                      <span>ВСЕГО ПОЗИЦИЙ (ГРУПП)</span>
                       <strong>{plannedPositionsCount}</strong>
                     </div>
                   </div>
@@ -649,6 +656,27 @@ export function EmployeeApplicationDetails() {
                       </label>
 
                       {shouldShowModulePositionsEditor
+                        ? (
+                            <div className="checkbox-field auth-form__field--wide">
+                              <label className="checkbox-field__label">
+                                <input
+                                  checked={lecturerAssistantDraft}
+                                  className="checkbox-field__input"
+                                  type="checkbox"
+                                  onChange={(event) =>
+                                    setLecturerAssistantDraft(event.target.checked)
+                                  }
+                                />
+                                <span className="checkbox-field__box" aria-hidden="true" />
+                                <span className="checkbox-field__text">
+                                  Ассистент лектора
+                                </span>
+                              </label>
+                            </div>
+                          )
+                        : null}
+
+                      {shouldShowModulePositionsEditor
                         ? moduleRows.map((row) => (
                             <div key={row.id} className="employee-workload__item employee-dialog__row">
                               <div className="employee-dialog__module-label">
@@ -726,47 +754,81 @@ export function EmployeeApplicationDetails() {
           {hasRelatedDisciplines ? (
             <section className="employee-details-card" aria-labelledby="related-disciplines-title">
               <div className="employee-details-card__header">
-                <h2 id="related-disciplines-title" className="employee-details-card__title">
-                  Другие заявки студента
-                </h2>
+                <button
+                  type="button"
+                  className="employee-details-collapse-toggle"
+                  aria-controls="related-disciplines-content"
+                  aria-expanded={isRelatedDisciplinesExpanded}
+                  onClick={() => setIsRelatedDisciplinesExpanded((current) => !current)}
+                >
+                  <h2 id="related-disciplines-title" className="employee-details-card__title">
+                    Другие заявки студента (нажмите на стрелку, чтобы раскрыть информацию)
+                  </h2>
+                  <span
+                    className={[
+                      'employee-details-collapse-toggle__icon',
+                      isRelatedDisciplinesExpanded
+                        ? 'employee-details-collapse-toggle__icon--expanded'
+                        : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    aria-hidden="true"
+                  >
+                    <ExpandMoreRoundedIcon fontSize="inherit" />
+                  </span>
+                </button>
               </div>
 
-              <div className="employee-related-list">
-                <div className="auth-form__notice auth-form__notice--compact">
-                  <p>
-                    Обратите, пожалуйста, внимание на другие заявки студента и их текущий статус<br></br>
-                    
-                    Если студента уже забронировали на максимальное количество позиций / групп (2),
-                    рассмотрите иные варианты или обратитесь на почту комиссии obkom.cs@hse.ru для
-                    урегулирования конфликта интересов<br></br>
-                    
-                    Согласно правилам проекта, работа ассистента более чем на двух позициях (группах) одновременно 
-                    с оплатой за каждую из них не допускается. Т.е. ассистент может работать максимум на 2-х оплачиваемых 
-                    позициях (группах) в модуле
-                  </p>
+              {isRelatedDisciplinesExpanded ? (
+                <div
+                  id="related-disciplines-content"
+                  className="employee-related-list"
+                  aria-labelledby="related-disciplines-title"
+                >
+                  <div className="auth-form__notice auth-form__notice--compact">
+                    <p>
+                      Обратите, пожалуйста, внимание на другие заявки студента и их текущий
+                      статус.
+                      <br />
+                      <br />
+                      Если студента уже забронировали на максимальное количество позиций /
+                      групп (2), рассмотрите иные варианты или обратитесь на почту комиссии
+                      obkom.cs@hse.ru для урегулирования конфликта интересов.
+                      <br />
+                      <br />
+                      Согласно правилам проекта, работа ассистента более чем на двух позициях
+                      (группах) одновременно с оплатой за каждую из них не допускается. Т.е.
+                      ассистент может работать максимум на 2-х оплачиваемых позициях
+                      (группах) в модуле.
+                    </p>
+                  </div>
+                  {relatedDisciplines.currentCampaign.map((discipline) => (
+                    <article
+                      key={discipline.applicationDisciplineId}
+                      className="employee-related-card"
+                    >
+                      <div className="employee-related-card__topline">
+                        <span className="employee-related-card__priority">
+                          Приоритет {discipline.priority}
+                        </span>
+                        <span
+                          className={[
+                            'application-card__status',
+                            `application-card__status--${getStatusClassName(discipline.status)}`,
+                          ]
+                            .filter(Boolean)
+                            .join(' ')}
+                        >
+                          {getStatusLabel(discipline.status)}
+                        </span>
+                      </div>
+                      <h3>{discipline.disciplineName ?? 'Дисциплина не указана'}</h3>
+                      <p>{discipline.disciplineProgram ?? 'Программа не указана'}</p>
+                    </article>
+                  ))}
                 </div>
-                {relatedDisciplines.currentCampaign.map((discipline) => (
-                  <article key={discipline.applicationDisciplineId} className="employee-related-card">
-                    <div className="employee-related-card__topline">
-                      <span className="employee-related-card__priority">
-                        Приоритет {discipline.priority}
-                      </span>
-                      <span
-                        className={[
-                          'application-card__status',
-                          `application-card__status--${getStatusClassName(discipline.status)}`,
-                        ]
-                          .filter(Boolean)
-                          .join(' ')}
-                      >
-                        {getStatusLabel(discipline.status)}
-                      </span>
-                    </div>
-                    <h3>{discipline.disciplineName ?? 'Дисциплина не указана'}</h3>
-                    <p>{discipline.disciplineProgram ?? 'Программа не указана'}</p>
-                  </article>
-                ))}
-              </div>
+              ) : null}
             </section>
           ) : null}
         </div>
@@ -795,7 +857,7 @@ export function EmployeeApplicationDetails() {
 
       {isSessionContextModalOpen ? (
         <ModalShell
-          title="Контекст сессии сотрудника"
+          title="Профиль пользователя"
           onClose={() => {
             setShouldReturnToConfirmModal(false)
             setIsSessionContextModalOpen(false)

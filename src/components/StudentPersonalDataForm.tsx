@@ -35,7 +35,7 @@ export function StudentPersonalDataForm({
         <>
           <div className="auth-card__header">
             <p className="eyebrow">Учебные ассистенты ФКН</p>
-            <h2 id="student-personal-data-title">Персональные данные студента</h2>
+            <h2 id="student-personal-data-title">Персональные данные учебного ассистента</h2>
           </div>
 
           <div className="auth-form__notice">

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined'
@@ -22,9 +22,13 @@ export function EmployeeStudentApplications() {
     discipline,
     disciplineOptions,
     error,
+    hasMoreApplications,
     isAdmin,
     isLoading,
+    isLoadingMore,
     isReadOnly,
+    loadMoreError,
+    loadMoreApplications,
     priority,
     priorityOptions,
     program,
@@ -42,7 +46,9 @@ export function EmployeeStudentApplications() {
     sortOrder,
     status,
     statusOptions,
+    totalApplicationsCount,
   } = useEmployeeStudentApplications()
+  const loadMoreTriggerRef = useRef<HTMLDivElement | null>(null)
 
   const sortLabel =
     sortOrder === 'newest' ? 'Сначала новые' : 'Сначала старые'
@@ -59,6 +65,29 @@ export function EmployeeStudentApplications() {
       pathname === appRoutes.employeeStudentApplicationsMine ? 'mine' : 'all',
     )
   }, [isAdmin, pathname, setActiveTab])
+
+  useEffect(() => {
+    const trigger = loadMoreTriggerRef.current
+
+    if (!trigger || isLoading || error || !hasMoreApplications) {
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void loadMoreApplications()
+        }
+      },
+      { rootMargin: '360px 0px' },
+    )
+
+    observer.observe(trigger)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [error, hasMoreApplications, isLoading, loadMoreApplications])
 
   return (
     <section
@@ -375,7 +404,8 @@ export function EmployeeStudentApplications() {
 
         <div className="employee-dashboard__toolbar">
           <p className="employee-dashboard__count">
-            {applications.length} {getApplicationsWord(applications.length)}
+            {totalApplicationsCount}{' '}
+            {getApplicationsWord(totalApplicationsCount)}
           </p>
           <button
             className="dashboard-sort-toggle"
@@ -397,108 +427,130 @@ export function EmployeeStudentApplications() {
             <p className="auth-form__error">{error}</p>
           </div>
         ) : applications.length > 0 ? (
-          <div className="employee-applications" aria-label="Список заявок студентов">
-            {applications.map((application) => (
-              <button
-                key={application.id}
-                className="application-card employee-application-card employee-application-card--interactive"
-                type="button"
-                onClick={() =>
-                  navigateTo(appRoutes.employeeStudentApplicationDetails, {
-                    applicationDisciplineId: application.id,
-                  })
-                }
-              >
-                <div className="application-card__header employee-application-card__header">
-                  <div className="employee-application-card__header-main">
-                    <h2 className="employee-application-card__title">
-                      {application.studentName}
-                    </h2>
-                  </div>
-                  <time
-                    className="employee-application-card__date"
-                    dateTime={application.createdAt}
-                  >
-                    {formatApplicationDate(application.createdAt)}
-                  </time>
-                </div>
-
-                <div className="employee-application-card__body">
-                  <div className="employee-application-card__topline">
-                    <div className="employee-application-card__priority">
-                      <span className="employee-application-card__priority-label">
-                        ПРИОРИТЕТ
-                      </span>
-                      <span className="employee-application-card__priority-value">
-                        {application.priority}
-                      </span>
+          <>
+            <div className="employee-applications" aria-label="Список заявок студентов">
+              {applications.map((application) => (
+                <button
+                  key={application.id}
+                  className="application-card employee-application-card employee-application-card--interactive"
+                  type="button"
+                  onClick={() =>
+                    navigateTo(appRoutes.employeeStudentApplicationDetails, {
+                      applicationDisciplineId: application.id,
+                    })
+                  }
+                >
+                  <div className="application-card__header employee-application-card__header">
+                    <div className="employee-application-card__header-main">
+                      <h2 className="employee-application-card__title">
+                        {application.studentName}
+                      </h2>
                     </div>
-                    <div className="employee-application-card__summary-status">
-                      <span className="employee-application-card__status-label sr-only">
-                        Статус
-                      </span>
-                        <span
-                          className={[
-                            'application-card__status',
-                            `application-card__status--${toStatusClassName(
-                              application.status,
-                            )}`,
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
-                        >
-                          {application.status}
+                    <time
+                      className="employee-application-card__date"
+                      dateTime={application.createdAt}
+                    >
+                      {formatApplicationDate(application.createdAt)}
+                    </time>
+                  </div>
+
+                  <div className="employee-application-card__body">
+                    <div className="employee-application-card__topline">
+                      <div className="employee-application-card__priority">
+                        <span className="employee-application-card__priority-label">
+                          ПРИОРИТЕТ
                         </span>
-                    </div>
-                  </div>
-
-                  <dl className="employee-application-card__summary">
-                    <div className="employee-application-card__summary-item">
-                      <dt>ПРОГРАММА</dt>
-                      <dd>{application.program}</dd>
-                    </div>
-                    <div className="employee-application-card__summary-item employee-application-card__summary-item--wide">
-                      <dt>ДИСЦИПЛИНА</dt>
-                      <dd>{application.discipline}</dd>
-                    </div>
-                    <div className="employee-application-card__summary-item">
-                      <dt>ТИП РАБОТЫ</dt>
-                      <dd>
-                        {application.workType === 'PAID' ? 'Платно' : 'Безвозмездно'}
-                      </dd>
-                    </div>
-                    <div className="employee-application-card__summary-item">
-                      <dt>ДВЕ ГРУППЫ</dt>
-                      <dd>{application.twoGroups ? 'Да' : 'Нет'}</dd>
-                    </div>
-                  </dl>
-
-                  <section className="employee-application-card__teachers" aria-label="История обучения">
-                    <h3 className="employee-application-card__teachers-title">
-                      КУРС РАНЕЕ ИЗУЧАЛ(А) У:
-                    </h3>
-                    <dl className="employee-application-card__teachers-grid">
-                      <div className="employee-application-card__teacher">
-                        <dt>ЛЕКТОР</dt>
-                        <dd>{application.teachers.lecturer}</dd>
+                        <span className="employee-application-card__priority-value">
+                          {application.priority}
+                        </span>
                       </div>
-                      <div className="employee-application-card__teacher">
-                        <dt>СЕМИНАРИСТ</dt>
-                        <dd>{application.teachers.seminarist}</dd>
+                      <div className="employee-application-card__summary-status">
+                        <span className="employee-application-card__status-label sr-only">
+                          Статус
+                        </span>
+                          <span
+                            className={[
+                              'application-card__status',
+                              `application-card__status--${toStatusClassName(
+                                application.status,
+                              )}`,
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
+                          >
+                            {application.status}
+                          </span>
+                      </div>
+                    </div>
+
+                    <dl className="employee-application-card__summary">
+                      <div className="employee-application-card__summary-item">
+                        <dt>ПРОГРАММА</dt>
+                        <dd>{application.program}</dd>
+                      </div>
+                      <div className="employee-application-card__summary-item employee-application-card__summary-item--wide">
+                        <dt>ДИСЦИПЛИНА</dt>
+                        <dd>{application.discipline}</dd>
+                      </div>
+                      <div className="employee-application-card__summary-item">
+                        <dt>ТИП РАБОТЫ</dt>
+                        <dd>
+                          {application.workType === 'PAID' ? 'Платно' : 'Безвозмездно'}
+                        </dd>
+                      </div>
+                      <div className="employee-application-card__summary-item">
+                        <dt>ДВЕ ГРУППЫ</dt>
+                        <dd>{application.twoGroups ? 'Да' : 'Нет'}</dd>
                       </div>
                     </dl>
-                  </section>
 
-                </div>
-              </button>
-            ))}
-          </div>
+                    <section className="employee-application-card__teachers" aria-label="История обучения">
+                      <h3 className="employee-application-card__teachers-title">
+                        КУРС РАНЕЕ ИЗУЧАЛ(А) У:
+                      </h3>
+                      <dl className="employee-application-card__teachers-grid">
+                        <div className="employee-application-card__teacher">
+                          <dt>ЛЕКТОР</dt>
+                          <dd>{application.teachers.lecturer}</dd>
+                        </div>
+                        <div className="employee-application-card__teacher">
+                          <dt>СЕМИНАРИСТ</dt>
+                          <dd>{application.teachers.seminarist}</dd>
+                        </div>
+                      </dl>
+                    </section>
+
+                  </div>
+                </button>
+              ))}
+            </div>
+            {isLoadingMore ? <EmployeeApplicationsSkeleton /> : null}
+            {loadMoreError ? (
+              <div className="auth-form__error-box" role="alert">
+                <p className="auth-form__error">{loadMoreError}</p>
+              </div>
+            ) : null}
+          </>
         ) : (
           <div className="dashboard-empty-state">
             <h3>Заявки не найдены</h3>
             <p>Попробуйте изменить параметры поиска или фильтры</p>
           </div>
         )}
+        {applications.length === 0 && loadMoreError ? (
+          <div className="auth-form__error-box" role="alert">
+            <p className="auth-form__error">{loadMoreError}</p>
+          </div>
+        ) : null}
+        {!isLoading && !error && hasMoreApplications ? (
+          <div
+            ref={loadMoreTriggerRef}
+            className="employee-applications__load-more"
+            aria-hidden={!isLoadingMore}
+          >
+            {isLoadingMore ? 'Загружаем еще заявки...' : null}
+          </div>
+        ) : null}
       </section>
 
       {isSessionContextModalOpen ? (
@@ -512,16 +564,16 @@ export function EmployeeStudentApplications() {
             type="button"
             className="admin-modal__backdrop"
             onClick={() => setIsSessionContextModalOpen(false)}
-            aria-label="Закрыть окно контекста сессии"
+            aria-label="Закрыть окно"
           />
           <div className="admin-modal__content statistics-modal__content">
             <div className="admin-modal__header">
-              <h3 id="employee-session-context-modal-title">Контекст сессии сотрудника</h3>
+              <h3 id="employee-session-context-modal-title">Профиль пользователя</h3>
               <button
                 type="button"
                 className="admin-modal__close"
                 onClick={() => setIsSessionContextModalOpen(false)}
-                aria-label="Закрыть окно контекста сессии"
+                aria-label="Закрыть окно"
               >
                 <CloseRoundedIcon fontSize="inherit" />
               </button>

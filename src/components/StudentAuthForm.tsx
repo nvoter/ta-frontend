@@ -19,17 +19,16 @@ export function StudentAuthForm() {
     <section className="auth-card" aria-labelledby="student-auth-title">
       <div className="auth-card__header">
         <p className="eyebrow">Учебные ассистенты ФКН</p>
-        <h2 id="student-auth-title">Вход для студента</h2>
+        <h2 id="student-auth-title">Вход для студентов и аспирантов</h2>
         <p className="auth-card__description">
-          Введите корпоративную электронную почту в домене @edu.hse.ru или
-          @hse.ru для входа в личный кабинет учебного ассистента
+          Введите корпоративную электронную почту для входа в личный кабинет учебного ассистента: @edu.hse.ru (студенты) или @hse.ru (аспиранты)
         </p>
       </div>
 
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <div className="auth-form__field">
           <label className="auth-form__label" htmlFor={inputId}>
-            Корпоративная электронная почта
+            Электронная почта
           </label>
           <input
             id={inputId}

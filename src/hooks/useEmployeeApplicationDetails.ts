@@ -43,6 +43,7 @@ export function useEmployeeApplicationDetails() {
   const [hasAppliedModuleAutofill, setHasAppliedModuleAutofill] = useState(false)
   const [statusDraft, setStatusDraft] =
     useState<EmployeeApplicationDisciplineStatus>('NEW')
+  const [lecturerAssistantDraft, setLecturerAssistantDraft] = useState(false)
   const [assignmentDraft, setAssignmentDraft] = useState('')
   const [actingAsFullName, setActingAsFullName] = useState<string | null>(null)
   const [currentEmployeePosition, setCurrentEmployeePosition] = useState('')
@@ -74,6 +75,7 @@ export function useEmployeeApplicationDetails() {
 
         setDetails(nextDetails)
         setStatusDraft(nextDetails.applicationDiscipline.status)
+        setLecturerAssistantDraft(nextDetails.applicationDiscipline.lecturerAssistant)
         setAssignmentDraft(nextDetails.applicationDiscipline.assignment ?? '')
       } catch (error) {
         if (isMounted) {
@@ -230,12 +232,14 @@ export function useEmployeeApplicationDetails() {
         applicationDisciplineId: details.applicationDiscipline.id,
         applicationId: details.application.id,
         approvedModules: normalizedModules.value,
+        lecturerAssistant: lecturerAssistantDraft,
         status: statusDraft,
       })
 
       const refreshedDetails = await loadApplicationDetails(details.applicationDiscipline.id)
       setDetails(refreshedDetails)
       setStatusDraft(refreshedDetails.applicationDiscipline.status)
+      setLecturerAssistantDraft(refreshedDetails.applicationDiscipline.lecturerAssistant)
       setAssignmentDraft(refreshedDetails.applicationDiscipline.assignment ?? '')
       setIsInterestedDialogOpen(false)
       setHasAppliedModuleAutofill(false)
@@ -283,6 +287,7 @@ export function useEmployeeApplicationDetails() {
     isReadOnly,
     isSaving,
     isSavingAssignment,
+    lecturerAssistantDraft,
     loadError,
     moduleRows,
     openInterestedDialog: () => {
@@ -296,6 +301,7 @@ export function useEmployeeApplicationDetails() {
               ? 'INTERESTED'
               : details.applicationDiscipline.status,
         )
+        setLecturerAssistantDraft(details.applicationDiscipline.lecturerAssistant)
         setAssignmentDraft(details.applicationDiscipline.assignment ?? '')
       }
       setIsInterestedDialogOpen(true)
@@ -369,6 +375,7 @@ export function useEmployeeApplicationDetails() {
       }
     },
     setAssignmentDraft,
+    setLecturerAssistantDraft,
     setStatusDraft,
     statusDraft,
     openSessionContextPicker: () => {
@@ -429,8 +436,8 @@ function normalizeModules(
       return {
         message:
           maxPositionsPerModule === null
-            ? 'Укажите количество позиций целым неотрицательным числом'
-            : `Укажите количество позиций целым числом от 0 до ${maxPositionsPerModule}`,
+            ? 'Укажите количество позиций (групп) целым неотрицательным числом'
+            : `Укажите количество позиций (групп) целым числом от 0 до ${maxPositionsPerModule}`,
         ok: false as const,
       }
     }
@@ -445,7 +452,7 @@ function normalizeModules(
 
   if (normalized.length === 0) {
     return {
-      message: 'Установите количество позиций хотя бы для одного модуля',
+      message: 'Установите количество позиций (групп) хотя бы для одного модуля',
       ok: false as const,
     }
   }

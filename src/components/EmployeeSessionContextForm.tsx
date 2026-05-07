@@ -50,7 +50,7 @@ export function EmployeeSessionContextForm({
     <>
       <div className="auth-card__header">
         <p className="auth-card__description">
-          Выберите, от чьего имени будут формироваться заявки в текущей сессии
+           Выберите, от чьего имени будут подаваться заявки.
         </p>
       </div>
 

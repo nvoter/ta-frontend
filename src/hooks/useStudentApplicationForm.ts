@@ -382,11 +382,14 @@ export function useStudentApplicationForm() {
     setSubmitError('')
 
     const nextErrors = validateStudentApplicationForm(formState, disciplineItems)
+    const firstInvalidDisciplineId = disciplineItems.find(
+      (item) => nextErrors.disciplineItems[item.id],
+    )?.id
 
-    if (Object.keys(nextErrors.disciplineItems).length > 0) {
+    if (firstInvalidDisciplineId) {
       setFormState((current) => ({
         ...current,
-        activeDisciplineTab: INITIAL_DISCIPLINE_ITEMS[0].id,
+        activeDisciplineTab: firstInvalidDisciplineId,
       }))
     }
 

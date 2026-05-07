@@ -43,6 +43,7 @@ export interface EmployeeApplicationDiscipline {
   disciplineName: string
   disciplineProgram: string
   id: string
+  lecturerAssistant: boolean
   lecturerName: string
   motivation: string
   priority: number

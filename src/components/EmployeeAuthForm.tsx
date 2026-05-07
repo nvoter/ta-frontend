@@ -32,7 +32,7 @@ export function EmployeeAuthForm() {
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <div className="auth-form__field">
           <label className="auth-form__label" htmlFor={emailId}>
-            Корпоративная электронная почта
+            Электронная почта
           </label>
           <input
             id={emailId}

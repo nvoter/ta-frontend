@@ -136,6 +136,11 @@ export function StudentDocuments() {
             label: 'Личный кабинет',
             onClick: () => navigateTo(appRoutes.studentDashboard),
           },
+          {
+            isActive: false,
+            label: 'Дисциплины ФКН',
+            onClick: () => navigateTo(appRoutes.studentDisciplines),
+          },
           ...(hasActiveCampaign
             ? [
                 {
@@ -167,21 +172,21 @@ export function StudentDocuments() {
       />
 
       <section className="settings-page__sections">
+        {student && shouldShowPassportReplacementAlert(student) ? (
+          <div className="auth-form__notice" role="note">
+            <p>
+              ⚠️ Ваш паспорт подлежит замене. Рекомендуем заменить паспорт сразу
+              после дня рождения, не дожидаясь окончания 90-дневного срока. Без
+              действительного паспорта на момент заключения договора ГПХ оплата
+              невозможна
+            </p>
+          </div>
+        ) : null}
+
         <section className="dashboard-content settings-page__section" aria-labelledby="student-documents-form-title">
           {error ? (
             <div className="auth-form__error-box" role="alert">
               <p className="auth-form__error">{error}</p>
-            </div>
-          ) : null}
-
-          {student && shouldShowPassportReplacementAlert(student) ? (
-            <div className="student-documents-alert" role="alert">
-              <p>
-                {'\u26A0\uFE0F '}Ваш паспорт подлежит замене. Рекомендуем заменить
-                паспорт сразу после дня рождения — не дожидаясь окончания
-                90-дневного срока. Без действительного паспорта на момент
-                заключения договора ГПХ оплата невозможна
-              </p>
             </div>
           ) : null}
 

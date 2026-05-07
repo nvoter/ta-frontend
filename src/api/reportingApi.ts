@@ -118,6 +118,16 @@ function extractFileName(contentDisposition: string | null) {
     return null
   }
 
+  const encodedMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i)
+
+  if (encodedMatch?.[1]) {
+    try {
+      return decodeURIComponent(encodedMatch[1])
+    } catch {
+      return encodedMatch[1]
+    }
+  }
+
   const match = contentDisposition.match(/filename="?([^";]+)"?/)
   return match?.[1] ?? null
 }

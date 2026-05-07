@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
+import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded'
+import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded'
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined'
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined'
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined'
@@ -12,6 +14,7 @@ import { useStudentDashboard } from '../hooks/useStudentDashboard'
 import { logoutAndRedirect } from '../utils/logout'
 import { navigateTo } from '../utils/navigation'
 import { appRoutes } from '../routes/appRoutes'
+import { getPositionsLabel } from '../utils/positionsLabel'
 
 export function StudentDashboard() {
   const {
@@ -27,9 +30,11 @@ export function StudentDashboard() {
     reloadApplications,
     setSortOrder,
     sortOrder,
+    studentWorkload,
     studentName,
   } =
     useStudentDashboard()
+  const [isWorkloadExpanded, setIsWorkloadExpanded] = useState(true)
   const [priorityModalState, setPriorityModalState] = useState<PriorityModalState>({
     error: '',
     isLoading: false,
@@ -168,6 +173,12 @@ export function StudentDashboard() {
           {
             isActive: true,
             label: 'Личный кабинет',
+            onClick: () => navigateTo(appRoutes.studentDashboard),
+          },
+          {
+            isActive: false,
+            label: 'Дисциплины ФКН',
+            onClick: () => navigateTo(appRoutes.studentDisciplines),
           },
           ...(hasActiveCampaign
             ? [
@@ -252,6 +263,65 @@ export function StudentDashboard() {
         <div className="auth-form__error-box" role="alert">
           <p className="auth-form__error">{campaignError}</p>
         </div>
+      ) : null}
+
+      {!isLoading && !error ? (
+        <section className="student-workload-card" aria-labelledby="student-workload-dashboard-title">
+          <div className="student-workload-card__header">
+            <h2 id="student-workload-dashboard-title" className="dashboard-content__title">
+              Текущая нагрузка (по заявкам преподавателей)
+            </h2>
+            <button
+              className="student-workload-card__toggle"
+              type="button"
+              aria-expanded={isWorkloadExpanded}
+              aria-controls="student-workload-dashboard-content"
+              aria-label={
+                isWorkloadExpanded
+                  ? 'Свернуть блок текущей нагрузки'
+                  : 'Развернуть блок текущей нагрузки'
+              }
+              onClick={() => setIsWorkloadExpanded((current) => !current)}
+            >
+              {isWorkloadExpanded ? (
+                <ExpandLessRoundedIcon fontSize="inherit" />
+              ) : (
+                <ExpandMoreRoundedIcon fontSize="inherit" />
+              )}
+            </button>
+          </div>
+
+          {isWorkloadExpanded ? (
+            <div id="student-workload-dashboard-content" className="employee-workload">
+              <div className="employee-workload__summary-grid">
+                <div className="employee-workload__summary-card">
+                  <span>Всего позиций (групп)</span>
+                  <strong>{studentWorkload?.totalApprovedPositionsCount ?? 0}</strong>
+                </div>
+                <div className="employee-workload__summary-card">
+                  <span>Платных позиций</span>
+                  <strong>{studentWorkload?.totalPaidApprovedPositionsCount ?? 0}</strong>
+                </div>
+                <div className="employee-workload__summary-card">
+                  <span>Бесплатных позиций</span>
+                  <strong>{studentWorkload?.totalFreeApprovedPositionsCount ?? 0}</strong>
+                </div>
+              </div>
+
+              <div className="employee-workload__section">
+                <span className="employee-workload__label">По модулям</span>
+                <div className="employee-workload__list">
+                  {getStudentWorkloadModuleRows(studentWorkload?.perModule).map((item) => (
+                    <div key={item.module} className="employee-workload__item">
+                      <span>Модуль {item.module}</span>
+                      <strong>{`${item.positionsCount} ${getPositionsLabel(item.positionsCount)}`}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </section>
       ) : null}
 
       <section className="dashboard-content" aria-label="Список заявок студента">
@@ -507,8 +577,9 @@ function PriorityModal({
           ) : (
             <div className="application-priority-modal">
               <p className="application-form__notice-text">
-                Перетащите дисциплины со статусом «Новая», чтобы изменить порядок приоритетов.
-                Заявки с другими статусами остаются на своих местах
+                Приоритет можно изменить только для заявок со статусом «Новая». Перетащите дисциплину, чтобы изменить порядок.
+                <br />
+                Если заявке уже присвоен статус «Заинтересован» или «На согласовании», редактирование недоступно. Обратитесь к преподавателю или администратору, чтобы вернуть её в статус «Новая». После правок преподавателю нужно будет повторно установить статус «Заинтересован» (если ваша договорённость сохраняется в силе).
               </p>
               {draftItems.length > 0 ? (
                 <div className="application-priority-modal__list">
@@ -586,6 +657,19 @@ function sortPriorityItems<T extends { priority: number }>(items: T[]) {
   return [...items].sort((left, right) => left.priority - right.priority)
 }
 
+function getStudentWorkloadModuleRows(
+  perModule: Array<{ module: number; positionsCount: number }> | undefined,
+) {
+  if (perModule?.length) {
+    return [...perModule].sort((left, right) => left.module - right.module)
+  }
+
+  return [1, 2, 3, 4].map((module) => ({
+    module,
+    positionsCount: 0,
+  }))
+}
+
 function toStudentStatusLabel(status: string) {
   if (status === 'NEW') return 'Новая'
   if (status === 'INTERESTED') return 'Заинтересован'
@@ -615,6 +699,7 @@ function StudentApplicationsSkeleton() {
     </div>
   )
 }
+
 
 function formatApplicationDate(value: string) {
   return new Intl.DateTimeFormat('ru-RU', {

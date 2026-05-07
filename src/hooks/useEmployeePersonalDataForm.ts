@@ -147,7 +147,11 @@ export function useEmployeePersonalDataForm(
     }
 
     if (name === 'workplace') {
-      setIsCustomWorkplace(value === EMPLOYEE_OTHER_WORKPLACE_OPTION)
+      if (value === EMPLOYEE_OTHER_WORKPLACE_OPTION) {
+        setIsCustomWorkplace(true)
+      } else if (event.target instanceof HTMLSelectElement) {
+        setIsCustomWorkplace(false)
+      }
     }
 
     setValues(nextValues)

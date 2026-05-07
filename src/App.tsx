@@ -11,6 +11,7 @@ import { EmployeeStatisticsPage } from './pages/EmployeeStatisticsPage'
 import { EmployeeStudentApplicationsPage } from './pages/EmployeeStudentApplicationsPage'
 import { StudentApplicationCreatePage } from './pages/StudentApplicationCreatePage'
 import { StudentDashboardPage } from './pages/StudentDashboardPage'
+import { StudentDisciplinesPage } from './pages/StudentDisciplinesPage'
 import { StudentDocumentsPage } from './pages/StudentDocumentsPage'
 import { StudentPersonalDataPage } from './pages/StudentPersonalDataPage'
 import { StudentSettingsPage } from './pages/StudentSettingsPage'
@@ -45,6 +46,7 @@ function App() {
     pathname !== appRoutes.employeeStudentApplicationsMine &&
     pathname !== appRoutes.authCode &&
     pathname !== appRoutes.studentApplicationCreate &&
+    pathname !== appRoutes.studentDisciplines &&
     pathname !== appRoutes.studentDashboard &&
     pathname !== appRoutes.studentDocuments &&
     pathname !== appRoutes.studentNotifications &&
@@ -131,6 +133,10 @@ function App() {
 
   if (pathname === appRoutes.studentDashboard) {
     return <StudentDashboardPage />
+  }
+
+  if (pathname === appRoutes.studentDisciplines) {
+    return <StudentDisciplinesPage />
   }
 
   if (pathname === appRoutes.studentDocuments) {

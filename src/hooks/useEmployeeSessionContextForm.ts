@@ -118,7 +118,11 @@ export function useEmployeeSessionContextForm(
         : value
 
     if (name === 'applicantWorkplace') {
-      setIsCustomWorkplace(value === EMPLOYEE_OTHER_WORKPLACE_OPTION)
+      if (value === EMPLOYEE_OTHER_WORKPLACE_OPTION) {
+        setIsCustomWorkplace(true)
+      } else if (event.target instanceof HTMLSelectElement) {
+        setIsCustomWorkplace(false)
+      }
     }
 
     setDraft((currentState) => ({
@@ -275,7 +279,7 @@ function getErrorMessage(error: unknown) {
     return error.message
   }
 
-  return 'Не удалось обновить контекст сессии'
+  return 'Не удалось обновить профиль пользователя'
 }
 
 function shouldUseCustomWorkplaceInput(value: string) {

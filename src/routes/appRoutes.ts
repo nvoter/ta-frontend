@@ -17,6 +17,7 @@ export const appRoutes = {
   employeeStatistics: '/employee/statistics',
   studentAuth: '/student/auth',
   studentApplicationCreate: '/student/applications/new',
+  studentDisciplines: '/student/disciplines',
   studentDashboard: '/student/dashboard',
   studentDocuments: '/student/documents',
   studentNotifications: '/student/notifications',

@@ -1013,20 +1013,20 @@ export function AdminPanel() {
 
             {!isProgramsLoading && programOptions.length > 0 ? (
               <section className="admin-section-block" aria-label="Образовательные программы">
-              <button
-                className="admin-collapse-toggle"
-                type="button"
-                onClick={() => setIsProgramsExpanded((current) => !current)}
-              >
-                <span className="admin-section-block__title">Образовательные программы</span>
-                {isProgramsExpanded ? (
-                  <ExpandLessRoundedIcon fontSize="inherit" />
-                ) : (
-                  <ExpandMoreRoundedIcon fontSize="inherit" />
-                )}
-              </button>
+                <button
+                  className="admin-collapse-toggle"
+                  type="button"
+                  onClick={() => setIsProgramsExpanded((current) => !current)}
+                >
+                  <span className="admin-section-block__title">Образовательные программы</span>
+                  {isProgramsExpanded ? (
+                    <ExpandLessRoundedIcon fontSize="inherit" />
+                  ) : (
+                    <ExpandMoreRoundedIcon fontSize="inherit" />
+                  )}
+                </button>
 
-              {isProgramsExpanded ? (
+                {isProgramsExpanded ? (
                   <div className="admin-table-wrap">
                     <table className="admin-table" aria-label="Список образовательных программ">
                       <thead>
@@ -1047,8 +1047,8 @@ export function AdminPanel() {
                       </tbody>
                     </table>
                   </div>
-              ) : null}
-            </section>
+                ) : null}
+              </section>
             ) : null}
 
             {isProgramsLoading ? (
@@ -1062,137 +1062,134 @@ export function AdminPanel() {
 
             {disciplinesTotalCount > 0 || isDisciplinesLoading ? (
               <section className="admin-section-block" aria-label="Дисциплины">
-              <div className="admin-section-block__header">
-                <span className="admin-section-block__title">Дисциплины</span>
                 <button
-                  className="admin-collapse-icon"
+                  className="admin-collapse-toggle"
                   type="button"
                   onClick={() => setIsDisciplinesExpanded((current) => !current)}
-                  aria-label={isDisciplinesExpanded ? 'Свернуть список дисциплин' : 'Развернуть список дисциплин'}
                 >
+                  <span className="admin-section-block__title">Дисциплины</span>
                   {isDisciplinesExpanded ? (
                     <ExpandLessRoundedIcon fontSize="inherit" />
                   ) : (
                     <ExpandMoreRoundedIcon fontSize="inherit" />
                   )}
                 </button>
-              </div>
 
-              {isDisciplinesExpanded ? (
-                <>
-                  <form className="employee-filters admin-disciplines-filters" onSubmit={preventDefault} noValidate>
-                    <label className="auth-form__field employee-filters__field">
-                      <span className="auth-form__label">Поиск по названию</span>
-                      <div className="employee-filters__control">
-                        <input
-                          className="auth-form__input employee-filters__input"
-                          type="text"
-                          value={disciplineSearch}
-                          onChange={(event) => setDisciplineSearch(event.target.value)}
-                          placeholder="Введите название дисциплины"
-                        />
-                        {disciplineSearch ? (
-                          <button
-                            className="employee-filters__clear"
-                            type="button"
-                            onClick={() => setDisciplineSearch('')}
-                            aria-label="Сбросить фильтр по названию дисциплины"
+                {isDisciplinesExpanded ? (
+                  <>
+                    <form className="employee-filters admin-disciplines-filters" onSubmit={preventDefault} noValidate>
+                      <label className="auth-form__field employee-filters__field">
+                        <span className="auth-form__label">Поиск по названию</span>
+                        <div className="employee-filters__control">
+                          <input
+                            className="auth-form__input employee-filters__input"
+                            type="text"
+                            value={disciplineSearch}
+                            onChange={(event) => setDisciplineSearch(event.target.value)}
+                            placeholder="Введите название дисциплины"
+                          />
+                          {disciplineSearch ? (
+                            <button
+                              className="employee-filters__clear"
+                              type="button"
+                              onClick={() => setDisciplineSearch('')}
+                              aria-label="Сбросить фильтр по названию дисциплины"
+                            >
+                              <CloseRoundedIcon fontSize="inherit" />
+                            </button>
+                          ) : null}
+                        </div>
+                      </label>
+
+                      <label className="auth-form__field employee-filters__field">
+                        <span className="auth-form__label">ОП</span>
+                        <div className="employee-filters__control">
+                          <select
+                            className={[
+                              'auth-form__input',
+                              'employee-filters__input',
+                              disciplineProgram !== 'Все ОП' ? 'employee-filters__input--has-value' : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
+                            value={disciplineProgram}
+                            onChange={(event) => setDisciplineProgram(event.target.value)}
                           >
-                            <CloseRoundedIcon fontSize="inherit" />
-                          </button>
-                        ) : null}
-                      </div>
-                    </label>
+                            {disciplineProgramOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          {disciplineProgram !== 'Все ОП' ? (
+                            <button
+                              className="employee-filters__clear"
+                              type="button"
+                              onClick={() => setDisciplineProgram('Все ОП')}
+                              aria-label="Сбросить фильтр по ОП"
+                            >
+                              <CloseRoundedIcon fontSize="inherit" />
+                            </button>
+                          ) : null}
+                        </div>
+                      </label>
 
-                    <label className="auth-form__field employee-filters__field">
-                      <span className="auth-form__label">ОП</span>
-                      <div className="employee-filters__control">
-                        <select
-                          className={[
-                            'auth-form__input',
-                            'employee-filters__input',
-                            disciplineProgram !== 'Все ОП' ? 'employee-filters__input--has-value' : '',
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
-                          value={disciplineProgram}
-                          onChange={(event) => setDisciplineProgram(event.target.value)}
-                        >
-                          {disciplineProgramOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        {disciplineProgram !== 'Все ОП' ? (
-                          <button
-                            className="employee-filters__clear"
-                            type="button"
-                            onClick={() => setDisciplineProgram('Все ОП')}
-                            aria-label="Сбросить фильтр по ОП"
+                      <label className="auth-form__field employee-filters__field">
+                        <span className="auth-form__label">Курс</span>
+                        <div className="employee-filters__control">
+                          <select
+                            className={[
+                              'auth-form__input',
+                              'employee-filters__input',
+                              disciplineCourse !== 'Любой курс' ? 'employee-filters__input--has-value' : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
+                            value={disciplineCourse}
+                            onChange={(event) => setDisciplineCourse(event.target.value)}
                           >
-                            <CloseRoundedIcon fontSize="inherit" />
-                          </button>
-                        ) : null}
+                            {disciplineCourseOptions.map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
+                          </select>
+                          {disciplineCourse !== 'Любой курс' ? (
+                            <button
+                              className="employee-filters__clear"
+                              type="button"
+                              onClick={() => setDisciplineCourse('Любой курс')}
+                              aria-label="Сбросить фильтр по курсу дисциплины"
+                            >
+                              <CloseRoundedIcon fontSize="inherit" />
+                            </button>
+                          ) : null}
+                        </div>
+                      </label>
+
+                      <div className="admin-disciplines-filters__action">
+                        <button className="auth-form__button admin-section-block__add-button" type="button" onClick={openCreateDisciplineModal}>
+                          <AddRoundedIcon fontSize="inherit" />
+                          <span>Добавить</span>
+                        </button>
                       </div>
-                    </label>
+                    </form>
 
-                    <label className="auth-form__field employee-filters__field">
-                      <span className="auth-form__label">Курс</span>
-                      <div className="employee-filters__control">
-                        <select
-                          className={[
-                            'auth-form__input',
-                            'employee-filters__input',
-                            disciplineCourse !== 'Любой курс' ? 'employee-filters__input--has-value' : '',
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
-                          value={disciplineCourse}
-                          onChange={(event) => setDisciplineCourse(event.target.value)}
-                        >
-                          {disciplineCourseOptions.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                        {disciplineCourse !== 'Любой курс' ? (
-                          <button
-                            className="employee-filters__clear"
-                            type="button"
-                            onClick={() => setDisciplineCourse('Любой курс')}
-                            aria-label="Сбросить фильтр по курсу дисциплины"
-                          >
-                            <CloseRoundedIcon fontSize="inherit" />
-                          </button>
-                        ) : null}
+                    {isDisciplinesLoading ? (
+                      <DisciplinesTableSkeleton />
+                    ) : disciplines.length === 0 ? (
+                      <div className="dashboard-empty-state">
+                        <h3>Дисциплины не найдены</h3>
                       </div>
-                    </label>
-
-                    <div className="admin-disciplines-filters__action">
-                      <button className="auth-form__button admin-section-block__add-button" type="button" onClick={openCreateDisciplineModal}>
-                        <AddRoundedIcon fontSize="inherit" />
-                        <span>Добавить</span>
-                      </button>
-                    </div>
-                  </form>
-
-                  {isDisciplinesLoading ? (
-                    <DisciplinesTableSkeleton />
-                  ) : disciplines.length === 0 ? (
-                    <div className="dashboard-empty-state">
-                      <h3>Дисциплины не найдены</h3>
-                    </div>
-                  ) : (
-                    <div className="admin-table-wrap">
-                      <table className="admin-table" aria-label="Список дисциплин">
-                        <thead>
-                          <tr>
-                            <th>Уровень образования</th>
-                            <th>ОП</th>
-                            <th>Название</th>
-                            <th>Курс</th>
+                    ) : (
+                      <div className="admin-table-wrap">
+                        <table className="admin-table" aria-label="Список дисциплин">
+                          <thead>
+                            <tr>
+                              <th>Уровень образования</th>
+                              <th>ОП</th>
+                              <th>Название</th>
+                              <th>Курс</th>
                             <th>Модули</th>
                             <th>Групп</th>
                             <th>Макс ассистентов</th>

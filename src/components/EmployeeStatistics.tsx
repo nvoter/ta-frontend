@@ -77,10 +77,14 @@ const initialFullFormState: FullReportFormState = {
 export function EmployeeStatistics() {
   const isAdmin = getAuthSession()?.userRole === 'ADMIN'
   const [rows, setRows] = useState<ApplicationsSummaryRowDto[]>([])
+  const [selectedEducationLevel, setSelectedEducationLevel] = useState('Все уровни')
+  const [selectedEducationalProgram, setSelectedEducationalProgram] = useState('Все ОП')
+  const [disciplineSearchValue, setDisciplineSearchValue] = useState('')
   const [statusValues, setStatusValues] = useState<string[]>([])
   const [workTypeValues, setWorkTypeValues] = useState<string[]>([])
   const [studentFullNameValues, setStudentFullNameValues] = useState<string[]>([])
   const [studentFacultyValues, setStudentFacultyValues] = useState<string[]>([])
+  const [studentEducationalProgramValues, setStudentEducationalProgramValues] = useState<string[]>([])
   const [assistantSupervisorValues, setAssistantSupervisorValues] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
@@ -107,6 +111,10 @@ export function EmployeeStatistics() {
   const studentFacultyOptions = useMemo(
     () => buildSelectOptions(studentFacultyValues),
     [studentFacultyValues],
+  )
+  const studentEducationalProgramOptions = useMemo(
+    () => buildSelectOptions(studentEducationalProgramValues),
+    [studentEducationalProgramValues],
   )
   const assistantSupervisorOptions = useMemo(
     () => buildSelectOptions(assistantSupervisorValues),
@@ -152,12 +160,33 @@ export function EmployeeStatistics() {
       ),
     [rows],
   )
-  const hasPartialReportApplications = useMemo(
+  const filteredProgramOptions = useMemo(
     () =>
-      rows.some(
-        (row) => row.agreedApplicationsCount > 0 || row.approvedApplicationsCount > 0,
+      filterEducationalProgramOptions(
+        rows,
+        selectedEducationLevel === 'Все уровни' ? '' : selectedEducationLevel,
+        educationalProgramOptions,
       ),
-    [rows],
+    [educationalProgramOptions, rows, selectedEducationLevel],
+  )
+  const filteredRows = useMemo(
+    () =>
+      rows.filter((row) => {
+        const matchesEducationLevel =
+          selectedEducationLevel === 'Все уровни' ||
+          row.educationLevel === selectedEducationLevel
+        const matchesEducationalProgram =
+          selectedEducationalProgram === 'Все ОП' ||
+          row.educationalProgram === selectedEducationalProgram
+        const matchesDiscipline =
+          disciplineSearchValue.trim() === '' ||
+          row.disciplineName
+            .toLocaleLowerCase('ru-RU')
+            .includes(disciplineSearchValue.trim().toLocaleLowerCase('ru-RU'))
+
+        return matchesEducationLevel && matchesEducationalProgram && matchesDiscipline
+      }),
+    [disciplineSearchValue, rows, selectedEducationLevel, selectedEducationalProgram],
   )
 
   useEffect(() => {
@@ -209,6 +238,11 @@ export function EmployeeStatistics() {
             setStudentFacultyValues(
               studentsResult.value
                 .map((student) => student.faculty?.trim() ?? '')
+                .filter((value) => value.length > 0),
+            )
+            setStudentEducationalProgramValues(
+              studentsResult.value
+                .map((student) => student.educationalProgram?.trim() ?? '')
                 .filter((value) => value.length > 0),
             )
           }
@@ -335,7 +369,7 @@ export function EmployeeStatistics() {
             Статистика
           </h1>
           <div className="statistics-actions">
-            {hasPartialReportApplications ? (
+            {hasAnyApplications ? (
               <button
                 className="auth-form__button auth-form__button--secondary statistics-export-button"
                 type="button"
@@ -355,6 +389,148 @@ export function EmployeeStatistics() {
             ) : null}
           </div>
         </div>
+
+        <form className="employee-filters statistics-filters" noValidate>
+          <label className="auth-form__field employee-filters__field">
+            <span className="auth-form__label">Поиск по названию дисциплины</span>
+            <div className="employee-filters__control">
+              <input
+                className="auth-form__input employee-filters__input"
+                type="text"
+                value={disciplineSearchValue}
+                onChange={(event) => setDisciplineSearchValue(event.target.value)}
+                placeholder="Введите название дисциплины"
+              />
+              <button
+                className={[
+                  'employee-filters__clear',
+                  disciplineSearchValue ? '' : 'employee-filters__clear--hidden',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                type="button"
+                onClick={() => setDisciplineSearchValue('')}
+                aria-label="Очистить поиск по названию дисциплины"
+                tabIndex={disciplineSearchValue ? 0 : -1}
+              >
+                <CloseRoundedIcon fontSize="inherit" />
+              </button>
+            </div>
+          </label>
+          <label className="auth-form__field employee-filters__field">
+            <span className="auth-form__label">Уровень образования</span>
+            <div className="employee-filters__control">
+              <select
+                className={[
+                  'auth-form__input',
+                  'employee-filters__input',
+                  selectedEducationLevel !== 'Все уровни'
+                    ? 'employee-filters__input--has-value'
+                    : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                value={selectedEducationLevel}
+                onChange={(event) => {
+                  const nextValue = event.target.value
+                  setSelectedEducationLevel(nextValue)
+
+                  if (
+                    selectedEducationalProgram !== 'Все ОП' &&
+                    !rows.some(
+                      (row) =>
+                        row.educationalProgram === selectedEducationalProgram &&
+                        (nextValue === 'Все уровни' || row.educationLevel === nextValue),
+                    )
+                  ) {
+                    setSelectedEducationalProgram('Все ОП')
+                  }
+                }}
+              >
+                <option value="Все уровни">Все уровни</option>
+                {educationLevelOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                className={[
+                  'employee-filters__clear',
+                  selectedEducationLevel !== 'Все уровни'
+                    ? ''
+                    : 'employee-filters__clear--hidden',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                type="button"
+                onClick={() => setSelectedEducationLevel('Все уровни')}
+                aria-label="Очистить фильтр по уровню образования"
+                tabIndex={selectedEducationLevel !== 'Все уровни' ? 0 : -1}
+              >
+                <CloseRoundedIcon fontSize="inherit" />
+              </button>
+            </div>
+          </label>
+          <label className="auth-form__field employee-filters__field">
+            <span className="auth-form__label">ОП</span>
+            <div className="employee-filters__control">
+              <select
+                className={[
+                  'auth-form__input',
+                  'employee-filters__input',
+                  selectedEducationalProgram !== 'Все ОП'
+                    ? 'employee-filters__input--has-value'
+                    : '',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                value={selectedEducationalProgram}
+                onChange={(event) => setSelectedEducationalProgram(event.target.value)}
+              >
+                <option value="Все ОП">Все ОП</option>
+                {filteredProgramOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                className={[
+                  'employee-filters__clear',
+                  selectedEducationalProgram !== 'Все ОП'
+                    ? ''
+                    : 'employee-filters__clear--hidden',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                type="button"
+                onClick={() => setSelectedEducationalProgram('Все ОП')}
+                aria-label="Очистить фильтр по ОП"
+                tabIndex={selectedEducationalProgram !== 'Все ОП' ? 0 : -1}
+              >
+                <CloseRoundedIcon fontSize="inherit" />
+              </button>
+            </div>
+          </label>
+          {selectedEducationLevel !== 'Все уровни' ||
+          selectedEducationalProgram !== 'Все ОП' ||
+          disciplineSearchValue ? (
+            <div className="employee-filters__actions statistics-filters__actions">
+              <button
+                className="employee-filters__reset-all"
+                type="button"
+                onClick={() => {
+                  setSelectedEducationLevel('Все уровни')
+                  setSelectedEducationalProgram('Все ОП')
+                  setDisciplineSearchValue('')
+                }}
+              >
+                Сбросить фильтры
+              </button>
+            </div>
+          ) : null}
+        </form>
 
         {isLoading ? (
           <StatisticsTableSkeleton />
@@ -380,8 +556,8 @@ export function EmployeeStatistics() {
                 </tr>
               </thead>
               <tbody>
-                {rows.length > 0 ? (
-                  rows.map((row, index) => (
+                {filteredRows.length > 0 ? (
+                  filteredRows.map((row, index) => (
                     <tr key={`${row.disciplineName}-${row.course}-${index}`}>
                       <td>{row.educationLevel}</td>
                       <td>{row.educationalProgram}</td>
@@ -488,17 +664,30 @@ export function EmployeeStatistics() {
                       }
                     />
                   )}
-                  <MultiSelectField
-                    label="ОП студента"
-                    values={partialForm.studentEducationalProgram}
-                    options={educationalProgramOptions}
-                    onChange={(values) =>
-                      setPartialForm((current) => ({
-                        ...current,
-                        studentEducationalProgram: values,
-                      }))
-                    }
-                  />
+                  {studentEducationalProgramOptions.length > 0 ? (
+                    <MultiSelectField
+                      label="ОП студента"
+                      values={partialForm.studentEducationalProgram}
+                      options={studentEducationalProgramOptions}
+                      onChange={(values) =>
+                        setPartialForm((current) => ({
+                          ...current,
+                          studentEducationalProgram: values,
+                        }))
+                      }
+                    />
+                  ) : (
+                    <MultiValueInputField
+                      label="ОП студента"
+                      values={partialForm.studentEducationalProgram}
+                      onChange={(values) =>
+                        setPartialForm((current) => ({
+                          ...current,
+                          studentEducationalProgram: values,
+                        }))
+                      }
+                    />
+                  )}
                   <MultiSelectField
                     label="Уровень образования дисциплины"
                     values={partialForm.disciplineEducationLevel}
@@ -591,17 +780,30 @@ export function EmployeeStatistics() {
                       }
                     />
                   )}
-                  <MultiSelectField
-                    label="ОП студента"
-                    values={fullForm.studentEducationalProgram}
-                    options={educationalProgramOptions}
-                    onChange={(values) =>
-                      setFullForm((current) => ({
-                        ...current,
-                        studentEducationalProgram: values,
-                      }))
-                    }
-                  />
+                  {studentEducationalProgramOptions.length > 0 ? (
+                    <MultiSelectField
+                      label="ОП студента"
+                      values={fullForm.studentEducationalProgram}
+                      options={studentEducationalProgramOptions}
+                      onChange={(values) =>
+                        setFullForm((current) => ({
+                          ...current,
+                          studentEducationalProgram: values,
+                        }))
+                      }
+                    />
+                  ) : (
+                    <MultiValueInputField
+                      label="ОП студента"
+                      values={fullForm.studentEducationalProgram}
+                      onChange={(values) =>
+                        setFullForm((current) => ({
+                          ...current,
+                          studentEducationalProgram: values,
+                        }))
+                      }
+                    />
+                  )}
                   <MultiSelectField
                     label="Уровень образования дисциплины"
                     values={fullForm.disciplineEducationLevel}
@@ -1043,6 +1245,24 @@ function filterDisciplineNameOptions(
     rows
       .filter((row) => selectedPrograms.includes(row.educationalProgram))
       .map((row) => row.disciplineName),
+  )
+
+  return filteredOptions.length > 0 ? filteredOptions : defaultOptions
+}
+
+function filterEducationalProgramOptions(
+  rows: ApplicationsSummaryRowDto[],
+  selectedEducationLevel: string,
+  defaultOptions: SelectOption[],
+) {
+  if (!selectedEducationLevel) {
+    return defaultOptions
+  }
+
+  const filteredOptions = buildSelectOptions(
+    rows
+      .filter((row) => row.educationLevel === selectedEducationLevel)
+      .map((row) => row.educationalProgram),
   )
 
   return filteredOptions.length > 0 ? filteredOptions : defaultOptions

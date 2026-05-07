@@ -28,6 +28,7 @@ export interface ApplicationDisciplineDto {
   disciplineId: string
   id: string
   lecturerName: string
+  lecturerAssistant: boolean
   motivation: string
   priority: number
   seminarianName: string
@@ -134,14 +135,29 @@ type RawApplicationDto = Omit<ApplicationDto, 'campaignEndsAt' | 'campaignStarts
 interface RawGetApplicationsResponse {
   applications: RawApplicationDto[]
   count: number
+  workload: StudentWorkloadDto | null
+}
+
+export interface GetMyApplicationsResponse {
+  applications: ApplicationDto[]
+  workload: StudentWorkloadDto | null
 }
 
 interface CampaignsResponse {
   campaigns: CampaignDto[]
 }
 
-interface GetApplicationDisciplinesOverviewResponse {
+export interface GetApplicationDisciplinesOverviewResponse {
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
   disciplines: ApplicationDisciplineOverviewDto[]
+}
+
+interface GetApplicationDisciplinesOverviewInput {
+  page?: number
+  size?: number
 }
 
 export interface GetApplicationDisciplinesResponse {
@@ -181,17 +197,20 @@ interface UpdateApplicationInput {
   gradebook?: File | null
 }
 
-export async function getMyApplications() {
+export async function getMyApplications(): Promise<GetMyApplicationsResponse> {
   const response = await requestJson<RawGetApplicationsResponse>({
     baseUrl: getStudentGatewayUrl(),
     headers: getAuthorizationHeaders(),
     path: 'applications',
   })
 
-  return response.applications.map((application) => ({
-    ...normalizeApplicationCampaignDates(application),
-    gradebook: normalizeGradebookUrls(application.gradebook, getStudentGatewayUrl()),
-  }))
+  return {
+    applications: response.applications.map((application) => ({
+      ...normalizeApplicationCampaignDates(application),
+      gradebook: normalizeGradebookUrls(application.gradebook, getStudentGatewayUrl()),
+    })),
+    workload: response.workload,
+  }
 }
 
 export async function createApplication(input: CreateApplicationInput) {
@@ -239,24 +258,64 @@ export async function getApplicationById(applicationId: string) {
   }
 }
 
-export async function getApplicationDisciplinesOverview() {
-  const response = await requestJson<GetApplicationDisciplinesOverviewResponse>({
-    baseUrl: getEmployeeGatewayUrl(),
-    headers: getAuthorizationHeaders(),
-    path: 'application-disciplines',
-  })
+export async function getApplicationDisciplinesOverview(
+  input: GetApplicationDisciplinesOverviewInput = {},
+) {
+  const response = await getApplicationDisciplinesOverviewPage(input)
 
   return response.disciplines
 }
 
-export async function getMyApplicationDisciplinesOverview() {
+export async function getApplicationDisciplinesOverviewPage(
+  input: GetApplicationDisciplinesOverviewInput = {},
+) {
+  const searchParams = new URLSearchParams()
+
+  if (typeof input.page === 'number') {
+    searchParams.set('page', String(input.page))
+  }
+
+  if (typeof input.size === 'number') {
+    searchParams.set('size', String(input.size))
+  }
+
   const response = await requestJson<GetApplicationDisciplinesOverviewResponse>({
     baseUrl: getEmployeeGatewayUrl(),
     headers: getAuthorizationHeaders(),
-    path: 'application-disciplines/my',
+    path: `application-disciplines${searchParams.size > 0 ? `?${searchParams}` : ''}`,
   })
 
+  return response
+}
+
+export async function getMyApplicationDisciplinesOverview(
+  input: GetApplicationDisciplinesOverviewInput = {},
+) {
+  const response = await getMyApplicationDisciplinesOverviewPage(input)
+
   return response.disciplines
+}
+
+export async function getMyApplicationDisciplinesOverviewPage(
+  input: GetApplicationDisciplinesOverviewInput = {},
+) {
+  const searchParams = new URLSearchParams()
+
+  if (typeof input.page === 'number') {
+    searchParams.set('page', String(input.page))
+  }
+
+  if (typeof input.size === 'number') {
+    searchParams.set('size', String(input.size))
+  }
+
+  const response = await requestJson<GetApplicationDisciplinesOverviewResponse>({
+    baseUrl: getEmployeeGatewayUrl(),
+    headers: getAuthorizationHeaders(),
+    path: `application-disciplines/my${searchParams.size > 0 ? `?${searchParams}` : ''}`,
+  })
+
+  return response
 }
 
 export async function getCurrentCampaign() {
@@ -382,12 +441,14 @@ export async function updateApplicationDisciplineStatus(input: {
   applicationDisciplineId: string
   applicationId: string
   approvedModules: ApprovedModuleDto[]
+  lecturerAssistant: boolean
   status: ApplicationStatus
 }) {
   return requestJson<ApplicationDisciplineDto>({
     baseUrl: getEmployeeGatewayUrl(),
     body: JSON.stringify({
       approvedModules: input.approvedModules,
+      lecturerAssistant: input.lecturerAssistant,
       status: input.status,
     }),
     headers: {

@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  getApplicationDisciplinesOverview,
-  getMyApplicationDisciplinesOverview,
+  getApplicationDisciplinesOverviewPage,
+  getMyApplicationDisciplinesOverviewPage,
+  type ApplicationDisciplineOverviewDto,
 } from '../api/applicationsApi'
 import {
   formatFullName,
@@ -13,6 +14,8 @@ import { useCampaignAccess } from './useCampaignAccess'
 import type { EmployeeStudentApplication } from '../types/employeeStudentApplication'
 import { appRoutes } from '../routes/appRoutes'
 import { sortStringsRu } from '../utils/sortOptions'
+
+const APPLICATIONS_PAGE_SIZE = 20
 
 export function useEmployeeStudentApplications() {
   const { campaignError, isAdmin, isReadOnly } = useCampaignAccess()
@@ -28,7 +31,15 @@ export function useEmployeeStudentApplications() {
   const [status, setStatus] = useState('Любой')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest')
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [error, setError] = useState('')
+  const [loadMoreError, setLoadMoreError] = useState('')
+  const [loadedApplicationsCount, setLoadedApplicationsCount] = useState(0)
+  const [nextPage, setNextPage] = useState(0)
+  const [totalApplicationsCount, setTotalApplicationsCount] = useState(0)
+  const isMineRoute =
+    window.location.pathname === appRoutes.employeeStudentApplicationsMine
+  const hasMoreApplications = loadedApplicationsCount < totalApplicationsCount
   const activeFiltersCount = [
     searchValue.trim() !== '',
     program !== 'Все программы',
@@ -37,52 +48,44 @@ export function useEmployeeStudentApplications() {
     status !== 'Любой',
   ].filter(Boolean).length
 
+  const loadApplicationsPage = useCallback(
+    async (page: number) => {
+      const overview = isMineRoute
+        ? await getMyApplicationDisciplinesOverviewPage({
+            page,
+            size: APPLICATIONS_PAGE_SIZE,
+          })
+        : await getApplicationDisciplinesOverviewPage({
+            page,
+            size: APPLICATIONS_PAGE_SIZE,
+          })
+      const mapped = await mapOverviewApplications(overview.disciplines)
+
+      return {
+        applications: mapped.filter(
+          (application) => application.status !== 'Удалено',
+        ),
+        loadedCount: overview.disciplines.length,
+        totalCount: overview.totalElements,
+      }
+    },
+    [isMineRoute],
+  )
+
   useEffect(() => {
     let isMounted = true
 
     async function loadApplications() {
       try {
-        const isMineRoute =
-          window.location.pathname === appRoutes.employeeStudentApplicationsMine
-        const overview = isMineRoute
-          ? await getMyApplicationDisciplinesOverview()
-          : await getApplicationDisciplinesOverview()
-
-        const mapped = await Promise.all(
-          overview.map(async (item) => {
-            const [student, disciplinePresentation] = await Promise.all([
-              getStudentByIdCached(item.studentId),
-              getDisciplinePresentation(item.disciplineId),
-            ])
-
-            return {
-              approvedModules: item.approvedModules,
-              applicationId: item.applicationId,
-              createdAt: item.createdAt,
-              discipline: disciplinePresentation.disciplineLabel,
-              id: item.applicationDisciplineId,
-              priority: item.priority as 1 | 2 | 3 | 4 | 5,
-              program: disciplinePresentation.program.name,
-              status: getStatusLabel(item.status),
-              studentName: formatFullName({
-                firstName: student.firstName,
-                lastName: student.lastName,
-                middleName: student.middleName,
-              }),
-              teachers: {
-                lecturer: item.lecturerName,
-                seminarist: item.seminarianName,
-              },
-              twoGroups: item.twoGroups,
-              workType: item.workType,
-            } satisfies EmployeeStudentApplication
-          }),
-        )
+        setError('')
+        setLoadMoreError('')
+        const overview = await loadApplicationsPage(0)
 
         if (isMounted) {
-          setAllApplications(
-            mapped.filter((application) => application.status !== 'Удалено'),
-          )
+          setAllApplications(overview.applications)
+          setLoadedApplicationsCount(overview.loadedCount)
+          setNextPage(1)
+          setTotalApplicationsCount(overview.totalCount)
         }
       } catch (loadError) {
         if (isMounted) {
@@ -100,7 +103,34 @@ export function useEmployeeStudentApplications() {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [loadApplicationsPage])
+
+  const loadMoreApplications = useCallback(async () => {
+    if (isLoading || isLoadingMore || !hasMoreApplications) {
+      return
+    }
+
+    try {
+      setIsLoadingMore(true)
+      setLoadMoreError('')
+      const overview = await loadApplicationsPage(nextPage)
+
+      setAllApplications((current) => mergeApplications(current, overview.applications))
+      setLoadedApplicationsCount((current) => current + overview.loadedCount)
+      setNextPage((current) => current + 1)
+      setTotalApplicationsCount(overview.totalCount)
+    } catch (loadError) {
+      setLoadMoreError(getErrorMessage(loadError))
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }, [
+    hasMoreApplications,
+    isLoading,
+    isLoadingMore,
+    loadApplicationsPage,
+    nextPage,
+  ])
 
   useEffect(() => {
     setActiveTab(
@@ -218,7 +248,11 @@ export function useEmployeeStudentApplications() {
     error,
     isAdmin,
     isLoading,
+    isLoadingMore,
     isReadOnly,
+    hasMoreApplications,
+    loadMoreError,
+    loadMoreApplications,
     priority,
     priorityOptions: ['Любой', '1', '2', '3', '4', '5'],
     program,
@@ -249,7 +283,55 @@ export function useEmployeeStudentApplications() {
     sortOrder,
     status,
     statusOptions,
+    totalApplicationsCount,
   }
+}
+
+async function mapOverviewApplications(
+  items: ApplicationDisciplineOverviewDto[],
+) {
+  return Promise.all(
+    items.map(async (item) => {
+      const [student, disciplinePresentation] = await Promise.all([
+        getStudentByIdCached(item.studentId),
+        getDisciplinePresentation(item.disciplineId),
+      ])
+
+      return {
+        approvedModules: item.approvedModules,
+        applicationId: item.applicationId,
+        createdAt: item.createdAt,
+        discipline: disciplinePresentation.disciplineLabel,
+        id: item.applicationDisciplineId,
+        priority: item.priority as 1 | 2 | 3 | 4 | 5,
+        program: disciplinePresentation.program.name,
+        status: getStatusLabel(item.status),
+        studentName: formatFullName({
+          firstName: student.firstName,
+          lastName: student.lastName,
+          middleName: student.middleName,
+        }),
+        teachers: {
+          lecturer: item.lecturerName,
+          seminarist: item.seminarianName,
+        },
+        twoGroups: item.twoGroups,
+        workType: item.workType,
+      } satisfies EmployeeStudentApplication
+    }),
+  )
+}
+
+function mergeApplications(
+  current: EmployeeStudentApplication[],
+  next: EmployeeStudentApplication[],
+) {
+  const existingIds = new Set(current.map((application) => application.id))
+
+  return [
+    ...current,
+    ...next.filter((application) => !existingIds.has(application.id)),
+  ]
 }
 
 function getStatusLabel(status: string): EmployeeStudentApplication['status'] {

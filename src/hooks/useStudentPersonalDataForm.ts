@@ -131,6 +131,7 @@ const FACULTY_OPTIONS_BY_LEVEL = {
 } as const
 
 const CITIZENSHIP_OPTIONS = sortStringsRu([
+  'Россия',
   'Азербайджан',
   'Армения',
   'Беларусь',
@@ -147,7 +148,6 @@ const CITIZENSHIP_OPTIONS = sortStringsRu([
   'Китай',
   'Кыргызстан',
   'Молдова',
-  'Россия',
   'США',
   'Таджикистан',
   'Туркменистан',
@@ -234,7 +234,7 @@ export function useStudentPersonalDataForm(
           educationLevel: Boolean(student.educationLevel),
           educationalProgram: Boolean(student.educationalProgram),
           email: Boolean(student.email),
-          faculty: Boolean(student.faculty),
+          faculty: false,
           fullName: Boolean(student.firstName && student.lastName),
           yearOfStudy: Boolean(student.course),
         })
