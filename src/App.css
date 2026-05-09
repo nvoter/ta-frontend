@@ -290,13 +290,18 @@
 
 .auth-code-input__native {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   margin: 0;
   padding: 0;
   border: 0;
   opacity: 0;
-  pointer-events: none;
+  color: transparent;
+  background: transparent;
+  caret-color: transparent;
+  font-size: 16px;
+  pointer-events: auto;
   cursor: text;
 }
 
@@ -1321,6 +1326,9 @@
 .application-card__status {
   display: inline-flex;
   align-items: center;
+  justify-self: start;
+  align-self: center;
+  width: fit-content;
   min-height: 28px;
   padding: 0 10px;
   border-radius: 999px;
@@ -2444,31 +2452,22 @@
 }
 
 .admin-table--students {
-  table-layout: fixed;
+  min-width: 980px;
 }
 
 .admin-table--students th:nth-child(2),
 .admin-table--students td:nth-child(2) {
-  width: 16%;
   padding-left: 18px;
 }
 
-.admin-table--students th:nth-child(3),
-.admin-table--students td:nth-child(3) {
-  width: 18%;
-}
-
-.admin-table--students th:nth-child(5),
-.admin-table--students td:nth-child(5) {
-  width: 18%;
+.admin-table--students th,
+.admin-table--students td {
   overflow-wrap: anywhere;
 }
 
 .admin-table--students th:nth-child(6),
 .admin-table--students td:nth-child(6) {
-  width: 24%;
   padding-left: 18px;
-  overflow-wrap: anywhere;
 }
 
 .admin-table tbody tr:last-child td {
@@ -2513,18 +2512,26 @@
 }
 
 .admin-table__actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
+  text-align: right;
+  vertical-align: middle;
+  white-space: nowrap;
+  line-height: 0;
 }
 
 .admin-table__actions--center {
-  justify-content: center;
+  text-align: right;
 }
 
 .admin-table__actions--center .admin-icon-button {
-  margin-top: 2px;
+  margin-top: 0;
+}
+
+.admin-table__actions .admin-icon-button + .admin-icon-button {
+  margin-left: 10px;
+}
+
+.admin-table__actions .admin-icon-button {
+  vertical-align: middle;
 }
 
 .admin-table__input {
@@ -3942,6 +3949,20 @@
     border-radius: 24px;
   }
 
+  input,
+  select,
+  textarea,
+  .auth-form__input,
+  .auth-form__textarea,
+  .employee-filters .auth-form__input {
+    font-size: 16px;
+  }
+
+  .auth-form__field,
+  .employee-filters__field {
+    scroll-margin-bottom: 45svh;
+  }
+
   .auth-form__actions--inline {
     grid-template-columns: 1fr;
   }
@@ -4011,6 +4032,21 @@
     grid-template-columns: 1fr;
   }
 
+  .student-disciplines-filters,
+  .employee-filters.statistics-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .student-disciplines-filters > *,
+  .student-disciplines-filters__search,
+  .student-disciplines-filters__education-level,
+  .student-disciplines-filters__program,
+  .student-disciplines-filters__course,
+  .employee-filters.statistics-filters > *,
+  .statistics-filters__actions {
+    grid-column: 1 / -1;
+  }
+
   .admin-grid,
   .admin-grid--campaign-create,
   .admin-grid--campaign-card {
@@ -4057,8 +4093,28 @@
     width: 100%;
   }
 
+  .admin-table--students {
+    min-width: 1180px;
+  }
+
+  .admin-table--students th {
+    white-space: nowrap;
+  }
+
   .discipline-tabs {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .discipline-card__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .discipline-card__layout::before {
+    content: none;
+  }
+
+  .discipline-card__checkbox-group {
+    margin-top: 0;
   }
 
   .discipline-card__details-grid {
@@ -4192,10 +4248,15 @@
     max-width: none;
   }
 
-  .employee-details-card__header,
-  .employee-related-card__topline {
+  .employee-details-card__header {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .employee-related-card__topline {
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
   }
 
   .employee-details-card__header-meta {

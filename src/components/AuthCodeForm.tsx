@@ -39,11 +39,8 @@ export function AuthCodeForm() {
 
   const focusSlot = (index: number) => {
     handleSlotFocus(index)
-
-    requestAnimationFrame(() => {
-      inputRef.current?.focus()
-      inputRef.current?.setSelectionRange(index, index)
-    })
+    inputRef.current?.focus()
+    inputRef.current?.setSelectionRange(index, index)
   }
 
   return (
@@ -114,6 +111,7 @@ export function AuthCodeForm() {
               name="code"
               type="text"
               inputMode="numeric"
+              pattern="[0-9]*"
               autoComplete="one-time-code"
               placeholder="000000"
               value={code}

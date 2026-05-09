@@ -51,6 +51,15 @@ export function StudentDashboard() {
       application.applicationId === currentCampaignApplicationId &&
       application.status === 'Новая',
   ).length
+  const hasStudentWorkloadData = studentWorkload
+    ? (
+      studentWorkload.totalApprovedPositionsCount > 0 ||
+      studentWorkload.totalPaidApprovedPositionsCount > 0 ||
+      studentWorkload.totalFreeApprovedPositionsCount > 0 ||
+      studentWorkload.perModule.some((item) => item.positionsCount > 0) ||
+      studentWorkload.disciplinePerModule.some((item) => item.positionsCount > 0)
+    )
+    : false
 
   async function openPriorityModal() {
     if (!currentCampaignApplicationId) {
@@ -265,7 +274,7 @@ export function StudentDashboard() {
         </div>
       ) : null}
 
-      {!isLoading && !error ? (
+      {!isLoading && !error && hasStudentWorkloadData ? (
         <section className="student-workload-card" aria-labelledby="student-workload-dashboard-title">
           <div className="student-workload-card__header">
             <h2 id="student-workload-dashboard-title" className="dashboard-content__title">

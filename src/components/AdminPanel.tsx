@@ -1256,11 +1256,21 @@ export function AdminPanel() {
           <div className="admin-grid admin-grid--campaign-create">
             <label className="auth-form__field">
               <span className="auth-form__label">Начало кампании</span>
-              <input className="auth-form__input" type="datetime-local" value={campaignStartAt} onChange={(event) => setCampaignStartAt(event.target.value)} />
+              <input
+                className="auth-form__input"
+                type="datetime-local"
+                value={campaignStartAt}
+                onChange={(event) => setCampaignStartAt(event.target.value)}
+              />
             </label>
             <label className="auth-form__field">
               <span className="auth-form__label">Окончание кампании</span>
-              <input className="auth-form__input" type="datetime-local" value={campaignEndAt} onChange={(event) => setCampaignEndAt(event.target.value)} />
+              <input
+                className="auth-form__input"
+                type="datetime-local"
+                value={campaignEndAt}
+                onChange={(event) => setCampaignEndAt(event.target.value)}
+              />
             </label>
             <label className="auth-form__field">
               <span className="auth-form__label">Ссылка для граждан РФ</span>
